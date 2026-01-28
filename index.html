@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Partner Hub - Opgavestyring</title>
+    <title>Partner Hub</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * {
             margin: 0;
@@ -33,6 +34,58 @@
             color: var(--text-dark);
         }
 
+        /* Auth Container */
+        .auth-container {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        }
+
+        .auth-box {
+            background: var(--white);
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: var(--shadow-lg);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .auth-title {
+            text-align: center;
+            margin-bottom: 30px;
+            color: var(--text-dark);
+        }
+
+        .auth-tabs {
+            display: flex;
+            margin-bottom: 25px;
+        }
+
+        .auth-tab {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            background: var(--bg-light);
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s;
+        }
+
+        .auth-tab:first-child {
+            border-radius: 8px 0 0 8px;
+        }
+
+        .auth-tab:last-child {
+            border-radius: 0 8px 8px 0;
+        }
+
+        .auth-tab.active {
+            background: var(--primary);
+            color: var(--white);
+        }
+
         /* Navigation */
         .navbar {
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
@@ -50,23 +103,20 @@
             color: var(--white);
             font-size: 1.5em;
             font-weight: bold;
-            display: flex;
-            align-items: center;
-            gap: 10px;
         }
 
-        .user-selector {
+        .navbar-right {
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 20px;
         }
 
-        .user-selector label {
+        .user-info {
             color: var(--white);
             font-size: 0.9em;
         }
 
-        .user-selector select {
+        .org-selector {
             padding: 8px 15px;
             border-radius: 20px;
             border: none;
@@ -78,6 +128,10 @@
         .app-container {
             display: flex;
             min-height: calc(100vh - 62px);
+        }
+
+        .app-container.hidden {
+            display: none;
         }
 
         /* Sidebar */
@@ -128,6 +182,8 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
         }
 
         .page-title {
@@ -173,6 +229,17 @@
             font-size: 0.85em;
         }
 
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
         /* Cards */
         .card {
             background: var(--white);
@@ -196,7 +263,7 @@
             font-weight: 600;
         }
 
-        /* Dashboard Stats */
+        /* Stats Grid */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -303,12 +370,8 @@
             color: var(--text-light);
         }
 
-        .modal-close:hover {
-            color: var(--text-dark);
-        }
-
-        /* Cases List */
-        .case-item {
+        /* List Items */
+        .list-item {
             background: var(--white);
             border-radius: 12px;
             padding: 20px;
@@ -318,23 +381,23 @@
             transition: transform 0.2s;
         }
 
-        .case-item:hover {
+        .list-item:hover {
             transform: translateX(5px);
         }
 
-        .case-header {
+        .list-header {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
             margin-bottom: 10px;
         }
 
-        .case-title {
+        .list-title {
             font-weight: 600;
             font-size: 1.1em;
         }
 
-        .case-status {
+        .status-badge {
             padding: 4px 12px;
             border-radius: 20px;
             font-size: 0.8em;
@@ -345,100 +408,272 @@
         .status-progress { background: #fff3e0; color: #f57c00; }
         .status-closed { background: #e8f5e9; color: #388e3c; }
 
-        .case-meta {
+        .list-meta {
             display: flex;
             gap: 20px;
             color: var(--text-light);
             font-size: 0.9em;
             margin-top: 10px;
+            flex-wrap: wrap;
         }
 
-        .case-description {
+        .list-description {
             color: var(--text-light);
             margin: 10px 0;
         }
 
-        /* Messages */
-        .message-container {
+        .list-actions {
+            margin-top: 15px;
             display: flex;
-            flex-direction: column;
-            height: calc(100vh - 200px);
+            gap: 10px;
         }
 
-        .message-list {
+        /* Tasks */
+        .task-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: var(--white);
+            border-radius: 10px;
+            margin-bottom: 10px;
+            box-shadow: var(--shadow);
+            transition: all 0.3s;
+        }
+
+        .task-item:hover {
+            transform: translateX(5px);
+        }
+
+        .task-item.completed {
+            opacity: 0.6;
+        }
+
+        .task-item.completed .task-text {
+            text-decoration: line-through;
+        }
+
+        .task-checkbox {
+            width: 22px;
+            height: 22px;
+            border: 2px solid var(--primary);
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.3s;
+        }
+
+        .task-checkbox:hover {
+            background: rgba(92, 107, 192, 0.1);
+        }
+
+        .task-checkbox.checked {
+            background: var(--primary);
+            color: var(--white);
+        }
+
+        .task-content {
+            flex: 1;
+        }
+
+        .task-text {
+            font-weight: 500;
+        }
+
+        .task-meta {
+            font-size: 0.85em;
+            color: var(--text-light);
+            margin-top: 4px;
+        }
+
+        .period-badge {
+            padding: 3px 10px;
+            border-radius: 15px;
+            font-size: 0.75em;
+            font-weight: 500;
+        }
+
+        .period-daily { background: #e3f2fd; color: #1976d2; }
+        .period-weekly { background: #f3e5f5; color: #7b1fa2; }
+        .period-monthly { background: #fff3e0; color: #f57c00; }
+
+        /* Chat */
+        .chat-layout {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 20px;
+            height: calc(100vh - 180px);
+        }
+
+        .chat-list {
+            background: var(--white);
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-list-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-list-items {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .chat-item {
+            padding: 15px 20px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+            transition: all 0.3s;
+        }
+
+        .chat-item:hover, .chat-item.active {
+            background: linear-gradient(90deg, rgba(92,107,192,0.1) 0%, transparent 100%);
+        }
+
+        .chat-item-name {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .chat-item-preview {
+            font-size: 0.85em;
+            color: var(--text-light);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .chat-window {
+            background: var(--white);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+            font-weight: 600;
+        }
+
+        .chat-messages {
             flex: 1;
             overflow-y: auto;
             padding: 20px;
             background: #f8f9fa;
-            border-radius: 12px;
-            margin-bottom: 20px;
         }
 
-        .message-item {
+        .message {
             margin-bottom: 15px;
             max-width: 70%;
         }
 
-        .message-item.sent {
+        .message.sent {
             margin-left: auto;
+        }
+
+        .message-sender {
+            font-size: 0.75em;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: var(--text-light);
+        }
+
+        .message.sent .message-sender {
+            text-align: right;
         }
 
         .message-bubble {
             padding: 12px 18px;
             border-radius: 18px;
-            position: relative;
         }
 
-        .message-item.received .message-bubble {
+        .message.received .message-bubble {
             background: var(--white);
             border-bottom-left-radius: 4px;
         }
 
-        .message-item.sent .message-bubble {
+        .message.sent .message-bubble {
             background: var(--primary);
             color: var(--white);
             border-bottom-right-radius: 4px;
         }
 
-        .message-sender {
-            font-size: 0.8em;
-            font-weight: 600;
-            margin-bottom: 4px;
-        }
-
-        .message-item.sent .message-sender {
-            text-align: right;
-        }
-
         .message-time {
-            font-size: 0.75em;
-            color: var(--text-light);
-            margin-top: 5px;
-        }
-
-        .message-item.sent .message-time {
-            text-align: right;
-            color: rgba(255,255,255,0.7);
-        }
-
-        .message-type-badge {
             font-size: 0.7em;
-            padding: 2px 8px;
-            border-radius: 10px;
-            margin-left: 8px;
+            color: var(--text-light);
+            margin-top: 4px;
         }
 
-        .type-internal { background: #e8f5e9; color: #388e3c; }
-        .type-external { background: #fff3e0; color: #f57c00; }
+        .message.sent .message-time {
+            text-align: right;
+        }
 
-        .message-input-area {
+        .chat-input {
+            padding: 15px 20px;
+            border-top: 1px solid #eee;
             display: flex;
             gap: 10px;
         }
 
-        .message-input-area input {
+        .chat-input input {
             flex: 1;
         }
+
+        /* Members */
+        .member-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .member-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: var(--white);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .member-info {
+            flex: 1;
+        }
+
+        .member-name {
+            font-weight: 600;
+        }
+
+        .member-role {
+            font-size: 0.85em;
+            color: var(--text-light);
+        }
+
+        .role-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75em;
+            font-weight: 500;
+        }
+
+        .role-admin { background: #fff3e0; color: #f57c00; }
+        .role-member { background: #e3f2fd; color: #1976d2; }
 
         /* Tabs */
         .tabs {
@@ -449,6 +684,7 @@
             padding: 5px;
             border-radius: 12px;
             box-shadow: var(--shadow);
+            flex-wrap: wrap;
         }
 
         .tab {
@@ -470,104 +706,6 @@
             color: var(--white);
         }
 
-        /* Todo List */
-        .todo-item {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            padding: 15px;
-            background: var(--white);
-            border-radius: 10px;
-            margin-bottom: 10px;
-            box-shadow: var(--shadow);
-            transition: all 0.3s;
-        }
-
-        .todo-item:hover {
-            transform: translateX(5px);
-        }
-
-        .todo-item.completed {
-            opacity: 0.6;
-        }
-
-        .todo-item.completed .todo-text {
-            text-decoration: line-through;
-        }
-
-        .todo-checkbox {
-            width: 22px;
-            height: 22px;
-            border: 2px solid var(--primary);
-            border-radius: 50%;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-
-        .todo-checkbox.checked {
-            background: var(--primary);
-            color: var(--white);
-        }
-
-        .todo-content {
-            flex: 1;
-        }
-
-        .todo-text {
-            font-weight: 500;
-        }
-
-        .todo-meta {
-            font-size: 0.85em;
-            color: var(--text-light);
-            margin-top: 4px;
-        }
-
-        .todo-period {
-            padding: 3px 10px;
-            border-radius: 15px;
-            font-size: 0.75em;
-            font-weight: 500;
-        }
-
-        .period-daily { background: #e3f2fd; color: #1976d2; }
-        .period-weekly { background: #f3e5f5; color: #7b1fa2; }
-        .period-monthly { background: #fff3e0; color: #f57c00; }
-
-        .todo-actions {
-            display: flex;
-            gap: 8px;
-        }
-
-        .action-btn {
-            width: 32px;
-            height: 32px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s;
-        }
-
-        .action-btn.edit {
-            background: #e3f2fd;
-            color: #1976d2;
-        }
-
-        .action-btn.delete {
-            background: #ffebee;
-            color: #d32f2f;
-        }
-
-        .action-btn:hover {
-            transform: scale(1.1);
-        }
-
         /* Empty state */
         .empty-state {
             text-align: center;
@@ -580,110 +718,90 @@
             margin-bottom: 20px;
         }
 
-        /* Filters */
-        .filters {
+        /* Loading */
+        .loading {
             display: flex;
-            gap: 15px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-
-        .filter-group {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .filter-group label {
-            font-size: 0.9em;
-            color: var(--text-light);
-        }
-
-        .filter-group select {
-            padding: 8px 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 0.9em;
-        }
-
-        /* Conversation threads */
-        .conversation-list {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        .conversation-item {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            padding: 15px;
-            background: var(--white);
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.3s;
-            box-shadow: var(--shadow);
-        }
-
-        .conversation-item:hover, .conversation-item.active {
-            background: linear-gradient(90deg, rgba(92,107,192,0.1) 0%, transparent 100%);
-        }
-
-        .conversation-avatar {
-            width: 45px;
-            height: 45px;
-            border-radius: 50%;
-            background: var(--primary);
-            color: var(--white);
-            display: flex;
-            align-items: center;
             justify-content: center;
-            font-weight: bold;
+            align-items: center;
+            padding: 40px;
         }
 
-        .conversation-info {
-            flex: 1;
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--bg-light);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
         }
 
-        .conversation-name {
-            font-weight: 600;
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
 
-        .conversation-preview {
-            font-size: 0.85em;
-            color: var(--text-light);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 200px;
+        /* Alert */
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
         }
 
-        .unread-badge {
-            background: var(--danger);
-            color: var(--white);
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 0.8em;
-            font-weight: bold;
+        .alert-error {
+            background: #ffebee;
+            color: #c62828;
         }
 
-        /* Grid layout for dashboard */
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 25px;
-        }
-
-        /* Linked case badge */
-        .linked-case {
-            display: inline-block;
-            padding: 4px 10px;
+        .alert-success {
             background: #e8f5e9;
-            color: #388e3c;
-            border-radius: 15px;
-            font-size: 0.8em;
-            margin-right: 10px;
+            color: #2e7d32;
+        }
+
+        /* Setup screen */
+        .setup-container {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            padding: 20px;
+        }
+
+        .setup-box {
+            background: var(--white);
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: var(--shadow-lg);
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .setup-title {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .setup-subtitle {
+            text-align: center;
+            color: var(--text-light);
+            margin-bottom: 30px;
+        }
+
+        .invitation-card {
+            background: var(--bg-light);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        .invitation-org {
+            font-weight: 600;
+            font-size: 1.1em;
+            margin-bottom: 5px;
+        }
+
+        .invitation-from {
+            color: var(--text-light);
+            font-size: 0.9em;
         }
 
         /* Responsive */
@@ -692,219 +810,233 @@
                 display: none;
             }
 
+            .chat-layout {
+                grid-template-columns: 1fr;
+            }
+
             .main-content {
                 padding: 15px;
             }
+        }
 
-            .page-header {
-                flex-direction: column;
-                gap: 15px;
-                align-items: flex-start;
-            }
-
-            .message-item {
-                max-width: 85%;
-            }
+        .hidden {
+            display: none !important;
         }
     </style>
 </head>
 <body>
-    <!-- Navigation -->
-    <nav class="navbar">
-        <div class="logo">
-            <span>Partner Hub</span>
+    <!-- Auth Screen -->
+    <div id="auth-screen" class="auth-container">
+        <div class="auth-box">
+            <h1 class="auth-title">Partner Hub</h1>
+            <div class="auth-tabs">
+                <button class="auth-tab active" onclick="showAuthTab('login')">Log ind</button>
+                <button class="auth-tab" onclick="showAuthTab('signup')">Opret konto</button>
+            </div>
+
+            <div id="auth-error" class="alert alert-error hidden"></div>
+
+            <form id="login-form" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="login-email" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Adgangskode</label>
+                    <input type="password" id="login-password" class="form-control" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%">Log ind</button>
+            </form>
+
+            <form id="signup-form" class="hidden" onsubmit="handleSignup(event)">
+                <div class="form-group">
+                    <label>Navn</label>
+                    <input type="text" id="signup-name" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="signup-email" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Adgangskode</label>
+                    <input type="password" id="signup-password" class="form-control" minlength="6" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%">Opret konto</button>
+            </form>
         </div>
-        <div class="user-selector">
-            <label>Logget ind som:</label>
-            <select id="currentUser" onchange="switchUser()">
-                <option value="partner1">Partner 1</option>
-                <option value="partner2">Partner 2</option>
-            </select>
-        </div>
-    </nav>
-
-    <div class="app-container">
-        <!-- Sidebar -->
-        <aside class="sidebar">
-            <div class="nav-item active" data-page="dashboard" onclick="showPage('dashboard')">
-                <span class="nav-icon">&#127968;</span>
-                <span>Dashboard</span>
-            </div>
-            <div class="nav-item" data-page="cases" onclick="showPage('cases')">
-                <span class="nav-icon">&#128203;</span>
-                <span>Sager</span>
-            </div>
-            <div class="nav-item" data-page="messages" onclick="showPage('messages')">
-                <span class="nav-icon">&#128172;</span>
-                <span>Beskeder</span>
-            </div>
-            <div class="nav-item" data-page="todos" onclick="showPage('todos')">
-                <span class="nav-icon">&#9745;</span>
-                <span>Opgaver</span>
-            </div>
-        </aside>
-
-        <!-- Main Content -->
-        <main class="main-content">
-            <!-- Dashboard Page -->
-            <div id="page-dashboard" class="page">
-                <div class="page-header">
-                    <h1 class="page-title">Dashboard</h1>
-                </div>
-
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-value" id="stat-cases">0</div>
-                        <div class="stat-label">Aktive sager</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value" id="stat-messages">0</div>
-                        <div class="stat-label">Uleste beskeder</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value" id="stat-todos-today">0</div>
-                        <div class="stat-label">Opgaver i dag</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value" id="stat-todos-week">0</div>
-                        <div class="stat-label">Opgaver denne uge</div>
-                    </div>
-                </div>
-
-                <div class="dashboard-grid">
-                    <div class="card">
-                        <div class="card-header">
-                            <span class="card-title">Seneste sager</span>
-                            <button class="btn btn-small btn-primary" onclick="showPage('cases')">Se alle</button>
-                        </div>
-                        <div id="recent-cases"></div>
-                    </div>
-
-                    <div class="card">
-                        <div class="card-header">
-                            <span class="card-title">Dagens opgaver</span>
-                            <button class="btn btn-small btn-primary" onclick="showPage('todos')">Se alle</button>
-                        </div>
-                        <div id="today-todos"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Cases Page -->
-            <div id="page-cases" class="page" style="display:none;">
-                <div class="page-header">
-                    <h1 class="page-title">Sager</h1>
-                    <button class="btn btn-primary" onclick="openModal('case-modal')">
-                        <span>+</span> Ny sag
-                    </button>
-                </div>
-
-                <div class="filters">
-                    <div class="filter-group">
-                        <label>Status:</label>
-                        <select id="case-filter-status" onchange="filterCases()">
-                            <option value="all">Alle</option>
-                            <option value="open">Aktive</option>
-                            <option value="progress">I gang</option>
-                            <option value="closed">Afsluttet</option>
-                        </select>
-                    </div>
-                    <div class="filter-group">
-                        <label>Tildelt:</label>
-                        <select id="case-filter-assigned" onchange="filterCases()">
-                            <option value="all">Alle</option>
-                            <option value="partner1">Partner 1</option>
-                            <option value="partner2">Partner 2</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div id="cases-list"></div>
-            </div>
-
-            <!-- Messages Page -->
-            <div id="page-messages" class="page" style="display:none;">
-                <div class="page-header">
-                    <h1 class="page-title">Beskeder</h1>
-                    <button class="btn btn-primary" onclick="openModal('conversation-modal')">
-                        <span>+</span> Ny samtale
-                    </button>
-                </div>
-
-                <div class="tabs">
-                    <button class="tab active" onclick="filterMessages('all')">Alle</button>
-                    <button class="tab" onclick="filterMessages('internal')">Interne</button>
-                    <button class="tab" onclick="filterMessages('external')">Eksterne</button>
-                </div>
-
-                <div style="display: grid; grid-template-columns: 300px 1fr; gap: 20px;">
-                    <div>
-                        <div class="conversation-list" id="conversation-list"></div>
-                    </div>
-                    <div class="message-container">
-                        <div class="message-list" id="message-list">
-                            <div class="empty-state">
-                                <div class="empty-state-icon">&#128172;</div>
-                                <p>Vælg en samtale for at se beskeder</p>
-                            </div>
-                        </div>
-                        <div class="message-input-area" id="message-input-area" style="display:none;">
-                            <select id="message-type" style="width: 120px; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px;">
-                                <option value="internal">Intern</option>
-                                <option value="external">Ekstern</option>
-                            </select>
-                            <input type="text" id="message-input" class="form-control" placeholder="Skriv en besked...">
-                            <button class="btn btn-primary" onclick="sendMessage()">Send</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Todos Page -->
-            <div id="page-todos" class="page" style="display:none;">
-                <div class="page-header">
-                    <h1 class="page-title">Opgaver</h1>
-                    <button class="btn btn-primary" onclick="openModal('todo-modal')">
-                        <span>+</span> Ny opgave
-                    </button>
-                </div>
-
-                <div class="tabs" id="todo-tabs">
-                    <button class="tab active" onclick="filterTodos('all')">Alle</button>
-                    <button class="tab" onclick="filterTodos('daily')">Daglige</button>
-                    <button class="tab" onclick="filterTodos('weekly')">Ugentlige</button>
-                    <button class="tab" onclick="filterTodos('monthly')">Månedlige</button>
-                </div>
-
-                <div class="filters">
-                    <div class="filter-group">
-                        <label>Vis:</label>
-                        <select id="todo-filter-status" onchange="applyTodoFilters()">
-                            <option value="active">Aktive</option>
-                            <option value="completed">Afsluttede</option>
-                            <option value="all">Alle</option>
-                        </select>
-                    </div>
-                    <div class="filter-group">
-                        <label>Tildelt:</label>
-                        <select id="todo-filter-assigned" onchange="applyTodoFilters()">
-                            <option value="all">Alle</option>
-                            <option value="partner1">Partner 1</option>
-                            <option value="partner2">Partner 2</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div id="todo-list"></div>
-            </div>
-        </main>
     </div>
 
+    <!-- Setup Screen (create org or accept invitation) -->
+    <div id="setup-screen" class="setup-container hidden">
+        <div class="setup-box">
+            <h1 class="setup-title">Velkommen!</h1>
+            <p class="setup-subtitle">Opret en organisation eller acceptér en invitation</p>
+
+            <div id="pending-invitations"></div>
+
+            <div class="card">
+                <h3 style="margin-bottom: 20px;">Opret ny organisation</h3>
+                <form onsubmit="createOrganization(event)">
+                    <div class="form-group">
+                        <label>Organisationsnavn</label>
+                        <input type="text" id="org-name" class="form-control" placeholder="F.eks. Familie Hansen" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width:100%">Opret organisation</button>
+                </form>
+            </div>
+
+            <button class="btn btn-outline" style="width:100%; margin-top: 10px;" onclick="handleLogout()">Log ud</button>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="app-screen" class="hidden">
+        <nav class="navbar">
+            <div class="logo">Partner Hub</div>
+            <div class="navbar-right">
+                <select id="org-selector" class="org-selector" onchange="switchOrganization()"></select>
+                <span class="user-info" id="user-display"></span>
+                <button class="btn btn-small btn-outline" style="color: white; border-color: white;" onclick="handleLogout()">Log ud</button>
+            </div>
+        </nav>
+
+        <div class="app-container">
+            <aside class="sidebar">
+                <div class="nav-item active" data-page="dashboard" onclick="showPage('dashboard')">
+                    <span class="nav-icon">&#127968;</span>
+                    <span>Dashboard</span>
+                </div>
+                <div class="nav-item" data-page="cases" onclick="showPage('cases')">
+                    <span class="nav-icon">&#128203;</span>
+                    <span>Sager</span>
+                </div>
+                <div class="nav-item" data-page="tasks" onclick="showPage('tasks')">
+                    <span class="nav-icon">&#9745;</span>
+                    <span>Opgaver</span>
+                </div>
+                <div class="nav-item" data-page="chat" onclick="showPage('chat')">
+                    <span class="nav-icon">&#128172;</span>
+                    <span>Chat</span>
+                </div>
+                <div class="nav-item" data-page="members" onclick="showPage('members')">
+                    <span class="nav-icon">&#128101;</span>
+                    <span>Medlemmer</span>
+                </div>
+            </aside>
+
+            <main class="main-content">
+                <!-- Dashboard -->
+                <div id="page-dashboard" class="page">
+                    <div class="page-header">
+                        <h1 class="page-title">Dashboard</h1>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value" id="stat-cases">0</div>
+                            <div class="stat-label">Aktive sager</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="stat-tasks">0</div>
+                            <div class="stat-label">Åbne opgaver</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="stat-members">0</div>
+                            <div class="stat-label">Medlemmer</div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-title">Mine opgaver i dag</span>
+                        </div>
+                        <div id="dashboard-tasks"></div>
+                    </div>
+                </div>
+
+                <!-- Cases -->
+                <div id="page-cases" class="page hidden">
+                    <div class="page-header">
+                        <h1 class="page-title">Sager</h1>
+                        <button class="btn btn-primary" onclick="openModal('case-modal')">+ Ny sag</button>
+                    </div>
+                    <div class="tabs">
+                        <button class="tab active" onclick="filterCases('all')">Alle</button>
+                        <button class="tab" onclick="filterCases('open')">Aktive</button>
+                        <button class="tab" onclick="filterCases('progress')">I gang</button>
+                        <button class="tab" onclick="filterCases('closed')">Afsluttet</button>
+                    </div>
+                    <div id="cases-list"></div>
+                </div>
+
+                <!-- Tasks -->
+                <div id="page-tasks" class="page hidden">
+                    <div class="page-header">
+                        <h1 class="page-title">Opgaver</h1>
+                        <button class="btn btn-primary" onclick="openModal('task-modal')">+ Ny opgave</button>
+                    </div>
+                    <div class="tabs">
+                        <button class="tab active" onclick="filterTasks('all')">Alle</button>
+                        <button class="tab" onclick="filterTasks('daily')">Daglige</button>
+                        <button class="tab" onclick="filterTasks('weekly')">Ugentlige</button>
+                        <button class="tab" onclick="filterTasks('monthly')">Månedlige</button>
+                    </div>
+                    <div id="tasks-list"></div>
+                </div>
+
+                <!-- Chat -->
+                <div id="page-chat" class="page hidden">
+                    <div class="page-header">
+                        <h1 class="page-title">Chat</h1>
+                    </div>
+                    <div class="chat-layout">
+                        <div class="chat-list">
+                            <div class="chat-list-header">
+                                <strong>Samtaler</strong>
+                                <button class="btn btn-small btn-primary" onclick="openModal('chat-modal')">+</button>
+                            </div>
+                            <div class="chat-list-items" id="chat-list"></div>
+                        </div>
+                        <div class="chat-window">
+                            <div class="chat-header" id="chat-header">Vælg en samtale</div>
+                            <div class="chat-messages" id="chat-messages">
+                                <div class="empty-state">
+                                    <div class="empty-state-icon">&#128172;</div>
+                                    <p>Vælg en samtale for at se beskeder</p>
+                                </div>
+                            </div>
+                            <div class="chat-input hidden" id="chat-input-area">
+                                <input type="text" id="message-input" class="form-control" placeholder="Skriv en besked..." onkeypress="if(event.key==='Enter')sendMessage()">
+                                <button class="btn btn-primary" onclick="sendMessage()">Send</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Members -->
+                <div id="page-members" class="page hidden">
+                    <div class="page-header">
+                        <h1 class="page-title">Medlemmer</h1>
+                        <button class="btn btn-primary" id="invite-btn" onclick="openModal('invite-modal')">+ Invitér</button>
+                    </div>
+                    <div class="card">
+                        <div id="members-list"></div>
+                    </div>
+                    <div class="card" id="invitations-card">
+                        <div class="card-header">
+                            <span class="card-title">Afventende invitationer</span>
+                        </div>
+                        <div id="invitations-list"></div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Modals -->
     <!-- Case Modal -->
     <div class="modal-overlay" id="case-modal">
         <div class="modal">
             <div class="modal-header">
-                <h2 class="modal-title" id="case-modal-title">Ny sag</h2>
+                <h2 class="modal-title">Ny sag</h2>
                 <button class="modal-close" onclick="closeModal('case-modal')">&times;</button>
             </div>
             <form onsubmit="saveCase(event)">
@@ -926,655 +1058,862 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>Tildelt til</label>
-                    <select id="case-assigned" class="form-control">
-                        <option value="">Ingen</option>
-                        <option value="partner1">Partner 1</option>
-                        <option value="partner2">Partner 2</option>
-                    </select>
-                </div>
-                <div class="form-group">
                     <label>Prioritet</label>
                     <select id="case-priority" class="form-control">
                         <option value="low">Lav</option>
-                        <option value="medium">Normal</option>
+                        <option value="medium" selected>Normal</option>
                         <option value="high">Høj</option>
                     </select>
                 </div>
-                <button type="submit" class="btn btn-primary" style="width:100%">Gem sag</button>
+                <div class="form-group">
+                    <label>Tildelt til</label>
+                    <select id="case-assigned" class="form-control"></select>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%">Gem</button>
             </form>
         </div>
     </div>
 
-    <!-- Todo Modal -->
-    <div class="modal-overlay" id="todo-modal">
+    <!-- Task Modal -->
+    <div class="modal-overlay" id="task-modal">
         <div class="modal">
             <div class="modal-header">
-                <h2 class="modal-title" id="todo-modal-title">Ny opgave</h2>
-                <button class="modal-close" onclick="closeModal('todo-modal')">&times;</button>
+                <h2 class="modal-title">Ny opgave</h2>
+                <button class="modal-close" onclick="closeModal('task-modal')">&times;</button>
             </div>
-            <form onsubmit="saveTodo(event)">
-                <input type="hidden" id="todo-id">
+            <form onsubmit="saveTask(event)">
+                <input type="hidden" id="task-id">
                 <div class="form-group">
                     <label>Opgave *</label>
-                    <input type="text" id="todo-text" class="form-control" required>
+                    <input type="text" id="task-title" class="form-control" required>
                 </div>
                 <div class="form-group">
                     <label>Beskrivelse</label>
-                    <textarea id="todo-description" class="form-control"></textarea>
+                    <textarea id="task-description" class="form-control"></textarea>
                 </div>
                 <div class="form-group">
                     <label>Periode</label>
-                    <select id="todo-period" class="form-control">
+                    <select id="task-period" class="form-control">
                         <option value="daily">Daglig</option>
                         <option value="weekly">Ugentlig</option>
                         <option value="monthly">Månedlig</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>Tildelt til</label>
-                    <select id="todo-assigned" class="form-control">
-                        <option value="">Begge</option>
-                        <option value="partner1">Partner 1</option>
-                        <option value="partner2">Partner 2</option>
-                    </select>
+                    <label>Deadline</label>
+                    <input type="date" id="task-deadline" class="form-control">
                 </div>
                 <div class="form-group">
-                    <label>Deadline</label>
-                    <input type="date" id="todo-deadline" class="form-control">
+                    <label>Tildelt til</label>
+                    <select id="task-assigned" class="form-control"></select>
                 </div>
                 <div class="form-group">
                     <label>Tilknyttet sag</label>
-                    <select id="todo-case" class="form-control">
-                        <option value="">Ingen</option>
-                    </select>
+                    <select id="task-case" class="form-control"></select>
                 </div>
-                <button type="submit" class="btn btn-primary" style="width:100%">Gem opgave</button>
+                <button type="submit" class="btn btn-primary" style="width:100%">Gem</button>
             </form>
         </div>
     </div>
 
-    <!-- Conversation Modal -->
-    <div class="modal-overlay" id="conversation-modal">
+    <!-- Chat Modal -->
+    <div class="modal-overlay" id="chat-modal">
         <div class="modal">
             <div class="modal-header">
                 <h2 class="modal-title">Ny samtale</h2>
-                <button class="modal-close" onclick="closeModal('conversation-modal')">&times;</button>
+                <button class="modal-close" onclick="closeModal('chat-modal')">&times;</button>
             </div>
-            <form onsubmit="createConversation(event)">
+            <form onsubmit="createChat(event)">
                 <div class="form-group">
-                    <label>Navn/Emne *</label>
-                    <input type="text" id="conv-name" class="form-control" required>
+                    <label>Navn på samtale *</label>
+                    <input type="text" id="chat-name" class="form-control" required>
                 </div>
+                <button type="submit" class="btn btn-primary" style="width:100%">Opret</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Invite Modal -->
+    <div class="modal-overlay" id="invite-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title">Invitér medlem</h2>
+                <button class="modal-close" onclick="closeModal('invite-modal')">&times;</button>
+            </div>
+            <form onsubmit="sendInvitation(event)">
                 <div class="form-group">
-                    <label>Type</label>
-                    <select id="conv-type" class="form-control">
-                        <option value="internal">Intern (mellem partnere)</option>
-                        <option value="external">Ekstern (med andre)</option>
-                    </select>
+                    <label>Email *</label>
+                    <input type="email" id="invite-email" class="form-control" required>
                 </div>
-                <div class="form-group">
-                    <label>Tilknyttet sag</label>
-                    <select id="conv-case" class="form-control">
-                        <option value="">Ingen</option>
-                    </select>
-                </div>
-                <button type="submit" class="btn btn-primary" style="width:100%">Opret samtale</button>
+                <p style="color: var(--text-light); font-size: 0.9em; margin-bottom: 20px;">
+                    Personen vil modtage en invitation når de logger ind med denne email.
+                </p>
+                <button type="submit" class="btn btn-primary" style="width:100%">Send invitation</button>
             </form>
         </div>
     </div>
 
     <script>
-        // ==================== DATA MANAGEMENT ====================
-        let currentUser = 'partner1';
-        let activeConversation = null;
-        let currentTodoFilter = 'all';
-        let currentMessageFilter = 'all';
+        // Supabase Configuration
+        const SUPABASE_URL = 'https://vzswzajnmubaqghsgqri.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ6c3d6YWpubXViYXFnaHNncXJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3Nzg1NDMsImV4cCI6MjA4MzM1NDU0M30.j0DkBY_7TJnqLYAWpN5gDbHx8wwjogpYR9N7-QW8ZLo';
 
-        // Initialize data from localStorage or create defaults
-        function initData() {
-            if (!localStorage.getItem('partnerHub_cases')) {
-                localStorage.setItem('partnerHub_cases', JSON.stringify([]));
-            }
-            if (!localStorage.getItem('partnerHub_todos')) {
-                localStorage.setItem('partnerHub_todos', JSON.stringify([]));
-            }
-            if (!localStorage.getItem('partnerHub_conversations')) {
-                localStorage.setItem('partnerHub_conversations', JSON.stringify([]));
-            }
-            if (!localStorage.getItem('partnerHub_messages')) {
-                localStorage.setItem('partnerHub_messages', JSON.stringify([]));
-            }
-        }
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        function getData(key) {
-            return JSON.parse(localStorage.getItem('partnerHub_' + key) || '[]');
-        }
+        // App State
+        let currentUser = null;
+        let currentOrg = null;
+        let organizations = [];
+        let members = [];
+        let cases = [];
+        let tasks = [];
+        let chats = [];
+        let activeChat = null;
+        let currentCaseFilter = 'all';
+        let currentTaskFilter = 'all';
+        let messageSubscription = null;
 
-        function setData(key, data) {
-            localStorage.setItem('partnerHub_' + key, JSON.stringify(data));
-        }
-
-        function generateId() {
-            return Date.now().toString(36) + Math.random().toString(36).substr(2);
-        }
-
-        // ==================== USER MANAGEMENT ====================
-        function switchUser() {
-            currentUser = document.getElementById('currentUser').value;
-            updateDashboard();
-            renderCases();
-            renderTodos();
-            renderConversations();
-        }
-
-        // ==================== NAVIGATION ====================
-        function showPage(pageId) {
-            document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
-            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-
-            document.getElementById('page-' + pageId).style.display = 'block';
-            document.querySelector(`.nav-item[data-page="${pageId}"]`).classList.add('active');
-
-            if (pageId === 'dashboard') updateDashboard();
-            if (pageId === 'cases') renderCases();
-            if (pageId === 'messages') renderConversations();
-            if (pageId === 'todos') renderTodos();
-        }
-
-        // ==================== MODALS ====================
-        function openModal(modalId) {
-            document.getElementById(modalId).classList.add('active');
-            if (modalId === 'todo-modal') populateCaseSelect('todo-case');
-            if (modalId === 'conversation-modal') populateCaseSelect('conv-case');
-        }
-
-        function closeModal(modalId) {
-            document.getElementById(modalId).classList.remove('active');
-            // Reset forms
-            if (modalId === 'case-modal') {
-                document.getElementById('case-id').value = '';
-                document.getElementById('case-title').value = '';
-                document.getElementById('case-description').value = '';
-                document.getElementById('case-status').value = 'open';
-                document.getElementById('case-assigned').value = '';
-                document.getElementById('case-priority').value = 'medium';
-                document.getElementById('case-modal-title').textContent = 'Ny sag';
-            }
-            if (modalId === 'todo-modal') {
-                document.getElementById('todo-id').value = '';
-                document.getElementById('todo-text').value = '';
-                document.getElementById('todo-description').value = '';
-                document.getElementById('todo-period').value = 'daily';
-                document.getElementById('todo-assigned').value = '';
-                document.getElementById('todo-deadline').value = '';
-                document.getElementById('todo-case').value = '';
-                document.getElementById('todo-modal-title').textContent = 'Ny opgave';
+        // ==================== AUTH ====================
+        async function checkAuth() {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                currentUser = session.user;
+                await loadUserData();
+            } else {
+                showScreen('auth');
             }
         }
 
-        function populateCaseSelect(selectId) {
-            const cases = getData('cases').filter(c => c.status !== 'closed');
-            const select = document.getElementById(selectId);
-            select.innerHTML = '<option value="">Ingen</option>';
-            cases.forEach(c => {
-                select.innerHTML += `<option value="${c.id}">${c.title}</option>`;
+        function showAuthTab(tab) {
+            document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+            document.querySelector(`.auth-tab:${tab === 'login' ? 'first' : 'last'}-child`).classList.add('active');
+            document.getElementById('login-form').classList.toggle('hidden', tab !== 'login');
+            document.getElementById('signup-form').classList.toggle('hidden', tab !== 'signup');
+            document.getElementById('auth-error').classList.add('hidden');
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+
+            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+            if (error) {
+                showAuthError(error.message);
+            } else {
+                currentUser = data.user;
+                await loadUserData();
+            }
+        }
+
+        async function handleSignup(e) {
+            e.preventDefault();
+            const name = document.getElementById('signup-name').value;
+            const email = document.getElementById('signup-email').value;
+            const password = document.getElementById('signup-password').value;
+
+            const { data, error } = await supabase.auth.signUp({
+                email,
+                password,
+                options: {
+                    data: { display_name: name }
+                }
             });
+
+            if (error) {
+                showAuthError(error.message);
+            } else if (data.user) {
+                currentUser = data.user;
+                await loadUserData();
+            }
+        }
+
+        async function handleLogout() {
+            await supabase.auth.signOut();
+            currentUser = null;
+            currentOrg = null;
+            organizations = [];
+            showScreen('auth');
+        }
+
+        function showAuthError(message) {
+            const el = document.getElementById('auth-error');
+            el.textContent = message;
+            el.classList.remove('hidden');
+        }
+
+        // ==================== DATA LOADING ====================
+        async function loadUserData() {
+            // Load user's organizations
+            const { data: memberData } = await supabase
+                .from('members')
+                .select('organization_id, role, organizations(id, name)')
+                .eq('user_id', currentUser.id);
+
+            organizations = memberData?.map(m => ({
+                id: m.organizations.id,
+                name: m.organizations.name,
+                role: m.role
+            })) || [];
+
+            // Check for pending invitations
+            const { data: invitations } = await supabase
+                .from('invitations')
+                .select('*, organizations(name)')
+                .eq('email', currentUser.email);
+
+            if (organizations.length === 0 && (!invitations || invitations.length === 0)) {
+                showScreen('setup');
+                return;
+            }
+
+            if (invitations && invitations.length > 0) {
+                showScreen('setup');
+                renderPendingInvitations(invitations);
+                return;
+            }
+
+            // Load first organization
+            currentOrg = organizations[0];
+            await loadOrganizationData();
+            showScreen('app');
+        }
+
+        async function loadOrganizationData() {
+            if (!currentOrg) return;
+
+            // Update UI
+            document.getElementById('user-display').textContent = currentUser.user_metadata?.display_name || currentUser.email;
+            populateOrgSelector();
+
+            // Load all data in parallel
+            await Promise.all([
+                loadMembers(),
+                loadCases(),
+                loadTasks(),
+                loadChats()
+            ]);
+
+            updateDashboard();
+        }
+
+        function populateOrgSelector() {
+            const selector = document.getElementById('org-selector');
+            selector.innerHTML = organizations.map(org =>
+                `<option value="${org.id}" ${org.id === currentOrg.id ? 'selected' : ''}>${org.name}</option>`
+            ).join('');
+        }
+
+        async function switchOrganization() {
+            const orgId = document.getElementById('org-selector').value;
+            currentOrg = organizations.find(o => o.id === orgId);
+            await loadOrganizationData();
+            showPage('dashboard');
+        }
+
+        // ==================== MEMBERS ====================
+        async function loadMembers() {
+            const { data } = await supabase
+                .from('members')
+                .select('*')
+                .eq('organization_id', currentOrg.id);
+
+            members = data || [];
+            renderMembers();
+            populateMemberSelects();
+        }
+
+        function renderMembers() {
+            const container = document.getElementById('members-list');
+            const isAdmin = members.find(m => m.user_id === currentUser.id)?.role === 'admin';
+
+            document.getElementById('invite-btn').classList.toggle('hidden', !isAdmin);
+
+            container.innerHTML = members.map(m => `
+                <div class="member-item">
+                    <div class="member-avatar">${(m.display_name || m.email).charAt(0).toUpperCase()}</div>
+                    <div class="member-info">
+                        <div class="member-name">${m.display_name || m.email}</div>
+                        <div class="member-role">${m.email}</div>
+                    </div>
+                    <span class="role-badge role-${m.role}">${m.role === 'admin' ? 'Admin' : 'Medlem'}</span>
+                </div>
+            `).join('');
+
+            // Load invitations
+            loadInvitations();
+        }
+
+        async function loadInvitations() {
+            const isAdmin = members.find(m => m.user_id === currentUser.id)?.role === 'admin';
+            const card = document.getElementById('invitations-card');
+
+            if (!isAdmin) {
+                card.classList.add('hidden');
+                return;
+            }
+
+            const { data } = await supabase
+                .from('invitations')
+                .select('*')
+                .eq('organization_id', currentOrg.id);
+
+            card.classList.toggle('hidden', !data || data.length === 0);
+
+            if (data && data.length > 0) {
+                document.getElementById('invitations-list').innerHTML = data.map(inv => `
+                    <div class="member-item">
+                        <div class="member-avatar">?</div>
+                        <div class="member-info">
+                            <div class="member-name">${inv.email}</div>
+                            <div class="member-role">Afventer</div>
+                        </div>
+                        <button class="btn btn-small btn-danger" onclick="cancelInvitation('${inv.id}')">Annullér</button>
+                    </div>
+                `).join('');
+            }
+        }
+
+        async function sendInvitation(e) {
+            e.preventDefault();
+            const email = document.getElementById('invite-email').value;
+
+            const { error } = await supabase
+                .from('invitations')
+                .insert({
+                    organization_id: currentOrg.id,
+                    email: email,
+                    invited_by: currentUser.id
+                });
+
+            if (error) {
+                alert('Fejl: ' + error.message);
+            } else {
+                closeModal('invite-modal');
+                document.getElementById('invite-email').value = '';
+                loadInvitations();
+            }
+        }
+
+        async function cancelInvitation(id) {
+            await supabase.from('invitations').delete().eq('id', id);
+            loadInvitations();
+        }
+
+        function populateMemberSelects() {
+            const options = '<option value="">Ingen</option>' +
+                members.map(m => `<option value="${m.user_id}">${m.display_name || m.email}</option>`).join('');
+
+            document.getElementById('case-assigned').innerHTML = options;
+            document.getElementById('task-assigned').innerHTML = options;
         }
 
         // ==================== CASES ====================
-        function saveCase(e) {
+        async function loadCases() {
+            const { data } = await supabase
+                .from('cases')
+                .select('*')
+                .eq('organization_id', currentOrg.id)
+                .order('created_at', { ascending: false });
+
+            cases = data || [];
+            renderCases();
+            populateCaseSelect();
+        }
+
+        function renderCases() {
+            const filtered = currentCaseFilter === 'all'
+                ? cases
+                : cases.filter(c => c.status === currentCaseFilter);
+
+            const container = document.getElementById('cases-list');
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">&#128203;</div>
+                        <p>Ingen sager fundet</p>
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = filtered.map(c => {
+                const assignee = members.find(m => m.user_id === c.assigned_to);
+                return `
+                    <div class="list-item" style="border-left-color: ${getPriorityColor(c.priority)}">
+                        <div class="list-header">
+                            <span class="list-title">${escapeHtml(c.title)}</span>
+                            <span class="status-badge status-${c.status}">${getStatusText(c.status)}</span>
+                        </div>
+                        ${c.description ? `<div class="list-description">${escapeHtml(c.description)}</div>` : ''}
+                        <div class="list-meta">
+                            <span>Tildelt: ${assignee ? (assignee.display_name || assignee.email) : 'Ingen'}</span>
+                            <span>Oprettet: ${formatDate(c.created_at)}</span>
+                        </div>
+                        <div class="list-actions">
+                            <button class="btn btn-small btn-primary" onclick="editCase('${c.id}')">Rediger</button>
+                            <button class="btn btn-small btn-danger" onclick="deleteCase('${c.id}')">Slet</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function filterCases(status) {
+            currentCaseFilter = status;
+            document.querySelectorAll('#page-cases .tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            renderCases();
+        }
+
+        async function saveCase(e) {
             e.preventDefault();
-            const cases = getData('cases');
             const id = document.getElementById('case-id').value;
 
             const caseData = {
-                id: id || generateId(),
+                organization_id: currentOrg.id,
                 title: document.getElementById('case-title').value,
                 description: document.getElementById('case-description').value,
                 status: document.getElementById('case-status').value,
-                assigned: document.getElementById('case-assigned').value,
                 priority: document.getElementById('case-priority').value,
-                createdBy: currentUser,
-                createdAt: id ? (cases.find(c => c.id === id)?.createdAt || new Date().toISOString()) : new Date().toISOString(),
-                updatedAt: new Date().toISOString()
+                assigned_to: document.getElementById('case-assigned').value || null,
+                created_by: currentUser.id
             };
 
             if (id) {
-                const index = cases.findIndex(c => c.id === id);
-                cases[index] = caseData;
+                await supabase.from('cases').update(caseData).eq('id', id);
             } else {
-                cases.push(caseData);
+                await supabase.from('cases').insert(caseData);
             }
 
-            setData('cases', cases);
             closeModal('case-modal');
-            renderCases();
+            resetCaseForm();
+            await loadCases();
             updateDashboard();
         }
 
         function editCase(id) {
-            const cases = getData('cases');
-            const c = cases.find(case_ => case_.id === id);
+            const c = cases.find(x => x.id === id);
             if (!c) return;
 
             document.getElementById('case-id').value = c.id;
             document.getElementById('case-title').value = c.title;
             document.getElementById('case-description').value = c.description || '';
             document.getElementById('case-status').value = c.status;
-            document.getElementById('case-assigned').value = c.assigned || '';
-            document.getElementById('case-priority').value = c.priority || 'medium';
-            document.getElementById('case-modal-title').textContent = 'Rediger sag';
+            document.getElementById('case-priority').value = c.priority;
+            document.getElementById('case-assigned').value = c.assigned_to || '';
             openModal('case-modal');
         }
 
-        function deleteCase(id) {
-            if (!confirm('Er du sikker på, at du vil slette denne sag?')) return;
-            const cases = getData('cases').filter(c => c.id !== id);
-            setData('cases', cases);
-            renderCases();
+        async function deleteCase(id) {
+            if (!confirm('Slet denne sag?')) return;
+            await supabase.from('cases').delete().eq('id', id);
+            await loadCases();
             updateDashboard();
         }
 
-        function renderCases() {
-            const cases = getData('cases');
-            const statusFilter = document.getElementById('case-filter-status')?.value || 'all';
-            const assignedFilter = document.getElementById('case-filter-assigned')?.value || 'all';
-
-            let filtered = cases.filter(c => {
-                if (statusFilter !== 'all' && c.status !== statusFilter) return false;
-                if (assignedFilter !== 'all' && c.assigned !== assignedFilter) return false;
-                return true;
-            });
-
-            filtered.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
-
-            const container = document.getElementById('cases-list');
-            if (filtered.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-state-icon">&#128203;</div>
-                        <p>Ingen sager fundet</p>
-                    </div>
-                `;
-                return;
-            }
-
-            container.innerHTML = filtered.map(c => `
-                <div class="case-item" style="border-left-color: ${getPriorityColor(c.priority)}">
-                    <div class="case-header">
-                        <span class="case-title">${escapeHtml(c.title)}</span>
-                        <span class="case-status status-${c.status}">${getStatusText(c.status)}</span>
-                    </div>
-                    ${c.description ? `<div class="case-description">${escapeHtml(c.description)}</div>` : ''}
-                    <div class="case-meta">
-                        <span>Tildelt: ${c.assigned ? getPartnerName(c.assigned) : 'Ingen'}</span>
-                        <span>Oprettet: ${formatDate(c.createdAt)}</span>
-                    </div>
-                    <div style="margin-top: 15px; display: flex; gap: 10px;">
-                        <button class="btn btn-small btn-primary" onclick="editCase('${c.id}')">Rediger</button>
-                        <button class="btn btn-small btn-danger" onclick="deleteCase('${c.id}')">Slet</button>
-                    </div>
-                </div>
-            `).join('');
+        function resetCaseForm() {
+            document.getElementById('case-id').value = '';
+            document.getElementById('case-title').value = '';
+            document.getElementById('case-description').value = '';
+            document.getElementById('case-status').value = 'open';
+            document.getElementById('case-priority').value = 'medium';
+            document.getElementById('case-assigned').value = '';
         }
 
-        function filterCases() {
-            renderCases();
+        function populateCaseSelect() {
+            const options = '<option value="">Ingen</option>' +
+                cases.filter(c => c.status !== 'closed').map(c =>
+                    `<option value="${c.id}">${escapeHtml(c.title)}</option>`
+                ).join('');
+            document.getElementById('task-case').innerHTML = options;
         }
 
-        // ==================== TODOS ====================
-        function saveTodo(e) {
-            e.preventDefault();
-            const todos = getData('todos');
-            const id = document.getElementById('todo-id').value;
+        // ==================== TASKS ====================
+        async function loadTasks() {
+            const { data } = await supabase
+                .from('tasks')
+                .select('*')
+                .eq('organization_id', currentOrg.id)
+                .order('created_at', { ascending: false });
 
-            const todoData = {
-                id: id || generateId(),
-                text: document.getElementById('todo-text').value,
-                description: document.getElementById('todo-description').value,
-                period: document.getElementById('todo-period').value,
-                assigned: document.getElementById('todo-assigned').value,
-                deadline: document.getElementById('todo-deadline').value,
-                caseId: document.getElementById('todo-case').value,
-                completed: id ? (todos.find(t => t.id === id)?.completed || false) : false,
-                createdBy: currentUser,
-                createdAt: id ? (todos.find(t => t.id === id)?.createdAt || new Date().toISOString()) : new Date().toISOString()
-            };
-
-            if (id) {
-                const index = todos.findIndex(t => t.id === id);
-                todos[index] = todoData;
-            } else {
-                todos.push(todoData);
-            }
-
-            setData('todos', todos);
-            closeModal('todo-modal');
-            renderTodos();
-            updateDashboard();
+            tasks = data || [];
+            renderTasks();
         }
 
-        function toggleTodo(id) {
-            const todos = getData('todos');
-            const todo = todos.find(t => t.id === id);
-            if (todo) {
-                todo.completed = !todo.completed;
-                todo.completedAt = todo.completed ? new Date().toISOString() : null;
-                todo.completedBy = todo.completed ? currentUser : null;
-                setData('todos', todos);
-                renderTodos();
-                updateDashboard();
-            }
-        }
+        function renderTasks() {
+            let filtered = currentTaskFilter === 'all'
+                ? tasks
+                : tasks.filter(t => t.period === currentTaskFilter);
 
-        function editTodo(id) {
-            const todos = getData('todos');
-            const t = todos.find(todo => todo.id === id);
-            if (!t) return;
-
-            document.getElementById('todo-id').value = t.id;
-            document.getElementById('todo-text').value = t.text;
-            document.getElementById('todo-description').value = t.description || '';
-            document.getElementById('todo-period').value = t.period;
-            document.getElementById('todo-assigned').value = t.assigned || '';
-            document.getElementById('todo-deadline').value = t.deadline || '';
-            document.getElementById('todo-modal-title').textContent = 'Rediger opgave';
-            populateCaseSelect('todo-case');
-            setTimeout(() => {
-                document.getElementById('todo-case').value = t.caseId || '';
-            }, 0);
-            openModal('todo-modal');
-        }
-
-        function deleteTodo(id) {
-            if (!confirm('Er du sikker på, at du vil slette denne opgave?')) return;
-            const todos = getData('todos').filter(t => t.id !== id);
-            setData('todos', todos);
-            renderTodos();
-            updateDashboard();
-        }
-
-        function filterTodos(period) {
-            currentTodoFilter = period;
-            document.querySelectorAll('#todo-tabs .tab').forEach(t => t.classList.remove('active'));
-            event.target.classList.add('active');
-            renderTodos();
-        }
-
-        function applyTodoFilters() {
-            renderTodos();
-        }
-
-        function renderTodos() {
-            const todos = getData('todos');
-            const cases = getData('cases');
-            const statusFilter = document.getElementById('todo-filter-status')?.value || 'active';
-            const assignedFilter = document.getElementById('todo-filter-assigned')?.value || 'all';
-
-            let filtered = todos.filter(t => {
-                if (currentTodoFilter !== 'all' && t.period !== currentTodoFilter) return false;
-                if (statusFilter === 'active' && t.completed) return false;
-                if (statusFilter === 'completed' && !t.completed) return false;
-                if (assignedFilter !== 'all' && t.assigned && t.assigned !== assignedFilter) return false;
-                return true;
-            });
-
+            // Sort: incomplete first, then by deadline
             filtered.sort((a, b) => {
                 if (a.completed !== b.completed) return a.completed ? 1 : -1;
-                if (a.deadline && b.deadline) return new Date(a.deadline) - new Date(b.deadline);
-                return new Date(b.createdAt) - new Date(a.createdAt);
+                return 0;
             });
 
-            const container = document.getElementById('todo-list');
+            const container = document.getElementById('tasks-list');
+
             if (filtered.length === 0) {
                 container.innerHTML = `
                     <div class="empty-state">
                         <div class="empty-state-icon">&#9745;</div>
                         <p>Ingen opgaver fundet</p>
-                    </div>
-                `;
+                    </div>`;
                 return;
             }
 
             container.innerHTML = filtered.map(t => {
-                const linkedCase = t.caseId ? cases.find(c => c.id === t.caseId) : null;
+                const assignee = members.find(m => m.user_id === t.assigned_to);
+                const linkedCase = cases.find(c => c.id === t.case_id);
                 return `
-                    <div class="todo-item ${t.completed ? 'completed' : ''}">
-                        <div class="todo-checkbox ${t.completed ? 'checked' : ''}" onclick="toggleTodo('${t.id}')">
+                    <div class="task-item ${t.completed ? 'completed' : ''}">
+                        <div class="task-checkbox ${t.completed ? 'checked' : ''}" onclick="toggleTask('${t.id}')">
                             ${t.completed ? '&#10003;' : ''}
                         </div>
-                        <div class="todo-content">
-                            <div class="todo-text">${escapeHtml(t.text)}</div>
-                            <div class="todo-meta">
-                                ${linkedCase ? `<span class="linked-case">&#128203; ${escapeHtml(linkedCase.title)}</span>` : ''}
-                                <span class="todo-period period-${t.period}">${getPeriodText(t.period)}</span>
-                                ${t.assigned ? ` | ${getPartnerName(t.assigned)}` : ''}
+                        <div class="task-content">
+                            <div class="task-text">${escapeHtml(t.title)}</div>
+                            <div class="task-meta">
+                                <span class="period-badge period-${t.period}">${getPeriodText(t.period)}</span>
+                                ${assignee ? ` | ${assignee.display_name || assignee.email}` : ''}
                                 ${t.deadline ? ` | Deadline: ${formatDate(t.deadline)}` : ''}
+                                ${linkedCase ? ` | Sag: ${escapeHtml(linkedCase.title)}` : ''}
                             </div>
                         </div>
-                        <div class="todo-actions">
-                            <button class="action-btn edit" onclick="editTodo('${t.id}')">&#9998;</button>
-                            <button class="action-btn delete" onclick="deleteTodo('${t.id}')">&#128465;</button>
-                        </div>
+                        <button class="btn btn-small btn-danger" onclick="deleteTask('${t.id}')" style="margin-left: auto;">&#128465;</button>
                     </div>
                 `;
             }).join('');
         }
 
-        // ==================== MESSAGES ====================
-        function createConversation(e) {
-            e.preventDefault();
-            const conversations = getData('conversations');
+        function filterTasks(period) {
+            currentTaskFilter = period;
+            document.querySelectorAll('#page-tasks .tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            renderTasks();
+        }
 
-            const conv = {
-                id: generateId(),
-                name: document.getElementById('conv-name').value,
-                type: document.getElementById('conv-type').value,
-                caseId: document.getElementById('conv-case').value,
-                createdBy: currentUser,
-                createdAt: new Date().toISOString(),
-                participants: ['partner1', 'partner2']
+        async function saveTask(e) {
+            e.preventDefault();
+            const id = document.getElementById('task-id').value;
+
+            const taskData = {
+                organization_id: currentOrg.id,
+                title: document.getElementById('task-title').value,
+                description: document.getElementById('task-description').value,
+                period: document.getElementById('task-period').value,
+                deadline: document.getElementById('task-deadline').value || null,
+                assigned_to: document.getElementById('task-assigned').value || null,
+                case_id: document.getElementById('task-case').value || null,
+                created_by: currentUser.id
             };
 
-            conversations.push(conv);
-            setData('conversations', conversations);
-            closeModal('conversation-modal');
-            renderConversations();
-            selectConversation(conv.id);
-        }
-
-        function selectConversation(id) {
-            activeConversation = id;
-            document.querySelectorAll('.conversation-item').forEach(c => c.classList.remove('active'));
-            const item = document.querySelector(`.conversation-item[data-id="${id}"]`);
-            if (item) item.classList.add('active');
-
-            document.getElementById('message-input-area').style.display = 'flex';
-            renderMessages();
-        }
-
-        function filterMessages(type) {
-            currentMessageFilter = type;
-            document.querySelectorAll('#page-messages .tab').forEach(t => t.classList.remove('active'));
-            event.target.classList.add('active');
-            renderConversations();
-        }
-
-        function renderConversations() {
-            const conversations = getData('conversations');
-            const messages = getData('messages');
-            const cases = getData('cases');
-
-            let filtered = conversations.filter(c => {
-                if (currentMessageFilter !== 'all' && c.type !== currentMessageFilter) return false;
-                return true;
-            });
-
-            filtered.sort((a, b) => {
-                const aLastMsg = messages.filter(m => m.conversationId === a.id).pop();
-                const bLastMsg = messages.filter(m => m.conversationId === b.id).pop();
-                const aTime = aLastMsg ? aLastMsg.timestamp : a.createdAt;
-                const bTime = bLastMsg ? bLastMsg.timestamp : b.createdAt;
-                return new Date(bTime) - new Date(aTime);
-            });
-
-            const container = document.getElementById('conversation-list');
-            if (filtered.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <p>Ingen samtaler endnu</p>
-                    </div>
-                `;
-                return;
+            if (id) {
+                await supabase.from('tasks').update(taskData).eq('id', id);
+            } else {
+                await supabase.from('tasks').insert(taskData);
             }
 
-            container.innerHTML = filtered.map(c => {
-                const convMessages = messages.filter(m => m.conversationId === c.id);
-                const lastMsg = convMessages[convMessages.length - 1];
-                const unread = convMessages.filter(m => !m.readBy?.includes(currentUser) && m.sender !== currentUser).length;
-                const linkedCase = c.caseId ? cases.find(cs => cs.id === c.caseId) : null;
-
-                return `
-                    <div class="conversation-item ${activeConversation === c.id ? 'active' : ''}" data-id="${c.id}" onclick="selectConversation('${c.id}')">
-                        <div class="conversation-avatar">${c.name.charAt(0).toUpperCase()}</div>
-                        <div class="conversation-info">
-                            <div class="conversation-name">
-                                ${escapeHtml(c.name)}
-                                <span class="message-type-badge type-${c.type}">${c.type === 'internal' ? 'Intern' : 'Ekstern'}</span>
-                            </div>
-                            <div class="conversation-preview">
-                                ${linkedCase ? `&#128203; ${escapeHtml(linkedCase.title)} | ` : ''}
-                                ${lastMsg ? escapeHtml(lastMsg.text.substring(0, 30)) + '...' : 'Ingen beskeder endnu'}
-                            </div>
-                        </div>
-                        ${unread > 0 ? `<span class="unread-badge">${unread}</span>` : ''}
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function sendMessage() {
-            if (!activeConversation) return;
-
-            const input = document.getElementById('message-input');
-            const text = input.value.trim();
-            if (!text) return;
-
-            const messages = getData('messages');
-            messages.push({
-                id: generateId(),
-                conversationId: activeConversation,
-                text: text,
-                type: document.getElementById('message-type').value,
-                sender: currentUser,
-                timestamp: new Date().toISOString(),
-                readBy: [currentUser]
-            });
-
-            setData('messages', messages);
-            input.value = '';
-            renderMessages();
-            renderConversations();
+            closeModal('task-modal');
+            resetTaskForm();
+            await loadTasks();
             updateDashboard();
         }
 
-        function renderMessages() {
-            if (!activeConversation) return;
+        async function toggleTask(id) {
+            const task = tasks.find(t => t.id === id);
+            if (!task) return;
 
-            const messages = getData('messages').filter(m => m.conversationId === activeConversation);
-            const container = document.getElementById('message-list');
+            await supabase.from('tasks').update({
+                completed: !task.completed,
+                completed_at: !task.completed ? new Date().toISOString() : null,
+                completed_by: !task.completed ? currentUser.id : null
+            }).eq('id', id);
 
-            // Mark messages as read
-            const allMessages = getData('messages');
-            allMessages.forEach(m => {
-                if (m.conversationId === activeConversation && !m.readBy?.includes(currentUser)) {
-                    if (!m.readBy) m.readBy = [];
-                    m.readBy.push(currentUser);
-                }
-            });
-            setData('messages', allMessages);
+            await loadTasks();
+            updateDashboard();
+        }
 
-            if (messages.length === 0) {
+        async function deleteTask(id) {
+            if (!confirm('Slet denne opgave?')) return;
+            await supabase.from('tasks').delete().eq('id', id);
+            await loadTasks();
+            updateDashboard();
+        }
+
+        function resetTaskForm() {
+            document.getElementById('task-id').value = '';
+            document.getElementById('task-title').value = '';
+            document.getElementById('task-description').value = '';
+            document.getElementById('task-period').value = 'daily';
+            document.getElementById('task-deadline').value = '';
+            document.getElementById('task-assigned').value = '';
+            document.getElementById('task-case').value = '';
+        }
+
+        // ==================== CHAT ====================
+        async function loadChats() {
+            const { data } = await supabase
+                .from('chats')
+                .select('*')
+                .eq('organization_id', currentOrg.id)
+                .order('created_at', { ascending: false });
+
+            chats = data || [];
+            renderChats();
+        }
+
+        function renderChats() {
+            const container = document.getElementById('chat-list');
+
+            if (chats.length === 0) {
                 container.innerHTML = `
-                    <div class="empty-state">
-                        <p>Ingen beskeder i denne samtale endnu</p>
-                    </div>
-                `;
+                    <div class="empty-state" style="padding: 30px;">
+                        <p>Ingen samtaler endnu</p>
+                    </div>`;
                 return;
             }
 
-            container.innerHTML = messages.map(m => `
-                <div class="message-item ${m.sender === currentUser ? 'sent' : 'received'}">
-                    <div class="message-sender">
-                        ${getPartnerName(m.sender)}
-                        <span class="message-type-badge type-${m.type}">${m.type === 'internal' ? 'Intern' : 'Ekstern'}</span>
-                    </div>
-                    <div class="message-bubble">${escapeHtml(m.text)}</div>
-                    <div class="message-time">${formatDateTime(m.timestamp)}</div>
+            container.innerHTML = chats.map(c => `
+                <div class="chat-item ${activeChat?.id === c.id ? 'active' : ''}" onclick="selectChat('${c.id}')">
+                    <div class="chat-item-name">${escapeHtml(c.name)}</div>
+                    <div class="chat-item-preview">Klik for at se beskeder</div>
                 </div>
             `).join('');
+        }
 
+        async function createChat(e) {
+            e.preventDefault();
+            const name = document.getElementById('chat-name').value;
+
+            const { data, error } = await supabase
+                .from('chats')
+                .insert({
+                    organization_id: currentOrg.id,
+                    name: name,
+                    created_by: currentUser.id
+                })
+                .select()
+                .single();
+
+            if (error) {
+                alert('Fejl: ' + error.message);
+            } else {
+                closeModal('chat-modal');
+                document.getElementById('chat-name').value = '';
+                await loadChats();
+                selectChat(data.id);
+            }
+        }
+
+        async function selectChat(chatId) {
+            activeChat = chats.find(c => c.id === chatId);
+            renderChats();
+
+            document.getElementById('chat-header').textContent = activeChat.name;
+            document.getElementById('chat-input-area').classList.remove('hidden');
+
+            // Unsubscribe from previous chat
+            if (messageSubscription) {
+                messageSubscription.unsubscribe();
+            }
+
+            // Load messages
+            await loadMessages();
+
+            // Subscribe to new messages
+            messageSubscription = supabase
+                .channel(`messages:${chatId}`)
+                .on('postgres_changes', {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'messages',
+                    filter: `chat_id=eq.${chatId}`
+                }, (payload) => {
+                    appendMessage(payload.new);
+                })
+                .subscribe();
+        }
+
+        async function loadMessages() {
+            if (!activeChat) return;
+
+            const { data } = await supabase
+                .from('messages')
+                .select('*')
+                .eq('chat_id', activeChat.id)
+                .order('created_at', { ascending: true });
+
+            const container = document.getElementById('chat-messages');
+
+            if (!data || data.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <p>Ingen beskeder endnu. Skriv den første!</p>
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = data.map(m => renderMessage(m)).join('');
             container.scrollTop = container.scrollHeight;
+        }
+
+        function renderMessage(msg) {
+            const sender = members.find(m => m.user_id === msg.sender_id);
+            const isSent = msg.sender_id === currentUser.id;
+
+            return `
+                <div class="message ${isSent ? 'sent' : 'received'}">
+                    <div class="message-sender">${sender?.display_name || sender?.email || 'Ukendt'}</div>
+                    <div class="message-bubble">${escapeHtml(msg.content)}</div>
+                    <div class="message-time">${formatTime(msg.created_at)}</div>
+                </div>
+            `;
+        }
+
+        function appendMessage(msg) {
+            const container = document.getElementById('chat-messages');
+            const emptyState = container.querySelector('.empty-state');
+            if (emptyState) emptyState.remove();
+
+            container.insertAdjacentHTML('beforeend', renderMessage(msg));
+            container.scrollTop = container.scrollHeight;
+        }
+
+        async function sendMessage() {
+            if (!activeChat) return;
+
+            const input = document.getElementById('message-input');
+            const content = input.value.trim();
+            if (!content) return;
+
+            input.value = '';
+
+            await supabase.from('messages').insert({
+                chat_id: activeChat.id,
+                sender_id: currentUser.id,
+                content: content
+            });
+        }
+
+        // ==================== ORGANIZATION ====================
+        async function createOrganization(e) {
+            e.preventDefault();
+            const name = document.getElementById('org-name').value;
+
+            const { data, error } = await supabase
+                .from('organizations')
+                .insert({
+                    name: name,
+                    created_by: currentUser.id
+                })
+                .select()
+                .single();
+
+            if (error) {
+                alert('Fejl: ' + error.message);
+            } else {
+                await loadUserData();
+            }
+        }
+
+        function renderPendingInvitations(invitations) {
+            const container = document.getElementById('pending-invitations');
+
+            container.innerHTML = invitations.map(inv => `
+                <div class="invitation-card">
+                    <div class="invitation-org">${escapeHtml(inv.organizations.name)}</div>
+                    <div class="invitation-from">Du er inviteret til at deltage</div>
+                    <div style="margin-top: 15px; display: flex; gap: 10px;">
+                        <button class="btn btn-primary" onclick="acceptInvitation('${inv.id}')">Acceptér</button>
+                        <button class="btn btn-outline" onclick="declineInvitation('${inv.id}')">Afvis</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function acceptInvitation(invitationId) {
+            const { data: inv } = await supabase
+                .from('invitations')
+                .select('*')
+                .eq('id', invitationId)
+                .single();
+
+            if (inv) {
+                // Add as member
+                await supabase.from('members').insert({
+                    organization_id: inv.organization_id,
+                    user_id: currentUser.id,
+                    email: currentUser.email,
+                    role: 'member',
+                    display_name: currentUser.user_metadata?.display_name || currentUser.email
+                });
+
+                // Delete invitation
+                await supabase.from('invitations').delete().eq('id', invitationId);
+
+                await loadUserData();
+            }
+        }
+
+        async function declineInvitation(invitationId) {
+            await supabase.from('invitations').delete().eq('id', invitationId);
+            await loadUserData();
         }
 
         // ==================== DASHBOARD ====================
         function updateDashboard() {
-            const cases = getData('cases');
-            const todos = getData('todos');
-            const messages = getData('messages');
+            document.getElementById('stat-cases').textContent = cases.filter(c => c.status !== 'closed').length;
+            document.getElementById('stat-tasks').textContent = tasks.filter(t => !t.completed).length;
+            document.getElementById('stat-members').textContent = members.length;
 
-            // Stats
-            const activeCases = cases.filter(c => c.status !== 'closed').length;
-            const unreadMessages = messages.filter(m => !m.readBy?.includes(currentUser) && m.sender !== currentUser).length;
+            // Today's tasks
+            const myTasks = tasks.filter(t => !t.completed && (!t.assigned_to || t.assigned_to === currentUser.id));
+            const container = document.getElementById('dashboard-tasks');
 
-            const today = new Date().toDateString();
-            const todayTodos = todos.filter(t => !t.completed && (t.period === 'daily' || (t.deadline && new Date(t.deadline).toDateString() === today))).length;
-
-            const weekFromNow = new Date();
-            weekFromNow.setDate(weekFromNow.getDate() + 7);
-            const weekTodos = todos.filter(t => !t.completed && (t.period === 'daily' || t.period === 'weekly' || (t.deadline && new Date(t.deadline) <= weekFromNow))).length;
-
-            document.getElementById('stat-cases').textContent = activeCases;
-            document.getElementById('stat-messages').textContent = unreadMessages;
-            document.getElementById('stat-todos-today').textContent = todayTodos;
-            document.getElementById('stat-todos-week').textContent = weekTodos;
-
-            // Recent cases
-            const recentCases = cases.slice(-3).reverse();
-            const recentCasesContainer = document.getElementById('recent-cases');
-            if (recentCases.length === 0) {
-                recentCasesContainer.innerHTML = '<p style="color: var(--text-light); text-align: center; padding: 20px;">Ingen sager endnu</p>';
+            if (myTasks.length === 0) {
+                container.innerHTML = '<p style="color: var(--text-light); padding: 20px; text-align: center;">Ingen opgaver</p>';
             } else {
-                recentCasesContainer.innerHTML = recentCases.map(c => `
-                    <div style="padding: 12px; border-bottom: 1px solid #eee; cursor: pointer;" onclick="showPage('cases'); editCase('${c.id}')">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <strong>${escapeHtml(c.title)}</strong>
-                            <span class="case-status status-${c.status}">${getStatusText(c.status)}</span>
-                        </div>
-                    </div>
-                `).join('');
-            }
-
-            // Today's todos
-            const todaysTodos = todos.filter(t => !t.completed && t.period === 'daily').slice(0, 5);
-            const todayTodosContainer = document.getElementById('today-todos');
-            if (todaysTodos.length === 0) {
-                todayTodosContainer.innerHTML = '<p style="color: var(--text-light); text-align: center; padding: 20px;">Ingen daglige opgaver</p>';
-            } else {
-                todayTodosContainer.innerHTML = todaysTodos.map(t => `
+                container.innerHTML = myTasks.slice(0, 5).map(t => `
                     <div style="padding: 12px; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 10px;">
-                        <div class="todo-checkbox ${t.completed ? 'checked' : ''}" onclick="toggleTodo('${t.id}')" style="width: 18px; height: 18px; font-size: 0.8em;">
+                        <div class="task-checkbox ${t.completed ? 'checked' : ''}" onclick="toggleTask('${t.id}')" style="width: 18px; height: 18px; font-size: 0.8em;">
                             ${t.completed ? '&#10003;' : ''}
                         </div>
-                        <span>${escapeHtml(t.text)}</span>
+                        <span>${escapeHtml(t.title)}</span>
                     </div>
                 `).join('');
             }
         }
 
-        // ==================== HELPERS ====================
+        // ==================== UI HELPERS ====================
+        function showScreen(screen) {
+            document.getElementById('auth-screen').classList.toggle('hidden', screen !== 'auth');
+            document.getElementById('setup-screen').classList.toggle('hidden', screen !== 'setup');
+            document.getElementById('app-screen').classList.toggle('hidden', screen !== 'app');
+        }
+
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+
+            document.getElementById('page-' + pageId).classList.remove('hidden');
+            document.querySelector(`.nav-item[data-page="${pageId}"]`).classList.add('active');
+
+            if (pageId === 'dashboard') updateDashboard();
+        }
+
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        // ==================== UTILITIES ====================
         function escapeHtml(text) {
+            if (!text) return '';
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
@@ -1584,7 +1923,7 @@
             return new Date(dateStr).toLocaleDateString('da-DK');
         }
 
-        function formatDateTime(dateStr) {
+        function formatTime(dateStr) {
             return new Date(dateStr).toLocaleString('da-DK', {
                 day: '2-digit',
                 month: '2-digit',
@@ -1603,29 +1942,20 @@
             return texts[period] || period;
         }
 
-        function getPartnerName(id) {
-            const names = { partner1: 'Partner 1', partner2: 'Partner 2' };
-            return names[id] || id;
-        }
-
         function getPriorityColor(priority) {
             const colors = { low: '#66bb6a', medium: '#5c6bc0', high: '#ef5350' };
             return colors[priority] || colors.medium;
         }
 
-        // ==================== KEYBOARD SHORTCUTS ====================
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' && e.target.id === 'message-input') {
-                sendMessage();
-            }
+        // Close modals with Escape
+        document.addEventListener('keydown', e => {
             if (e.key === 'Escape') {
                 document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
             }
         });
 
-        // ==================== INITIALIZATION ====================
-        initData();
-        updateDashboard();
+        // Initialize
+        checkAuth();
     </script>
 </body>
 </html>
