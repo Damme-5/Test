@@ -1158,7 +1158,7 @@
         const SUPABASE_URL = 'https://vzswzajnmubaqghsgqri.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ6c3d6YWpubXViYXFnaHNncXJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3Nzg1NDMsImV4cCI6MjA4MzM1NDU0M30.j0DkBY_7TJnqLYAWpN5gDbHx8wwjogpYR9N7-QW8ZLo';
 
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         // App State
         let currentUser = null;
@@ -1175,7 +1175,7 @@
 
         // ==================== AUTH ====================
         async function checkAuth() {
-            const { data: { session } } = await supabase.auth.getSession();
+            const { data: { session } } = await supabaseClient.auth.getSession();
             if (session) {
                 currentUser = session.user;
                 await loadUserData();
@@ -1197,7 +1197,7 @@
             const email = document.getElementById('login-email').value;
             const password = document.getElementById('login-password').value;
 
-            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+            const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
 
             if (error) {
                 showAuthError(error.message);
@@ -1213,7 +1213,7 @@
             const email = document.getElementById('signup-email').value;
             const password = document.getElementById('signup-password').value;
 
-            const { data, error } = await supabase.auth.signUp({
+            const { data, error } = await supabaseClient.auth.signUp({
                 email,
                 password,
                 options: {
@@ -1230,7 +1230,7 @@
         }
 
         async function handleLogout() {
-            await supabase.auth.signOut();
+            await supabaseClient.auth.signOut();
             currentUser = null;
             currentOrg = null;
             organizations = [];
@@ -1246,7 +1246,7 @@
         // ==================== DATA LOADING ====================
         async function loadUserData() {
             // Load user's organizations
-            const { data: memberData } = await supabase
+            const { data: memberData } = await supabaseClient
                 .from('members')
                 .select('organization_id, role, organizations(id, name)')
                 .eq('user_id', currentUser.id);
@@ -1258,7 +1258,7 @@
             })) || [];
 
             // Check for pending invitations
-            const { data: invitations } = await supabase
+            const { data: invitations } = await supabaseClient
                 .from('invitations')
                 .select('*, organizations(name)')
                 .eq('email', currentUser.email);
@@ -1314,7 +1314,7 @@
 
         // ==================== MEMBERS ====================
         async function loadMembers() {
-            const { data } = await supabase
+            const { data } = await supabaseClient
                 .from('members')
                 .select('*')
                 .eq('organization_id', currentOrg.id);
@@ -1354,7 +1354,7 @@
                 return;
             }
 
-            const { data } = await supabase
+            const { data } = await supabaseClient
                 .from('invitations')
                 .select('*')
                 .eq('organization_id', currentOrg.id);
@@ -1379,7 +1379,7 @@
             e.preventDefault();
             const email = document.getElementById('invite-email').value;
 
-            const { error } = await supabase
+            const { error } = await supabaseClient
                 .from('invitations')
                 .insert({
                     organization_id: currentOrg.id,
@@ -1397,7 +1397,7 @@
         }
 
         async function cancelInvitation(id) {
-            await supabase.from('invitations').delete().eq('id', id);
+            await supabaseClient.from('invitations').delete().eq('id', id);
             loadInvitations();
         }
 
@@ -1411,7 +1411,7 @@
 
         // ==================== CASES ====================
         async function loadCases() {
-            const { data } = await supabase
+            const { data } = await supabaseClient
                 .from('cases')
                 .select('*')
                 .eq('organization_id', currentOrg.id)
@@ -1482,9 +1482,9 @@
             };
 
             if (id) {
-                await supabase.from('cases').update(caseData).eq('id', id);
+                await supabaseClient.from('cases').update(caseData).eq('id', id);
             } else {
-                await supabase.from('cases').insert(caseData);
+                await supabaseClient.from('cases').insert(caseData);
             }
 
             closeModal('case-modal');
@@ -1508,7 +1508,7 @@
 
         async function deleteCase(id) {
             if (!confirm('Slet denne sag?')) return;
-            await supabase.from('cases').delete().eq('id', id);
+            await supabaseClient.from('cases').delete().eq('id', id);
             await loadCases();
             updateDashboard();
         }
@@ -1532,7 +1532,7 @@
 
         // ==================== TASKS ====================
         async function loadTasks() {
-            const { data } = await supabase
+            const { data } = await supabaseClient
                 .from('tasks')
                 .select('*')
                 .eq('organization_id', currentOrg.id)
@@ -1610,9 +1610,9 @@
             };
 
             if (id) {
-                await supabase.from('tasks').update(taskData).eq('id', id);
+                await supabaseClient.from('tasks').update(taskData).eq('id', id);
             } else {
-                await supabase.from('tasks').insert(taskData);
+                await supabaseClient.from('tasks').insert(taskData);
             }
 
             closeModal('task-modal');
@@ -1625,7 +1625,7 @@
             const task = tasks.find(t => t.id === id);
             if (!task) return;
 
-            await supabase.from('tasks').update({
+            await supabaseClient.from('tasks').update({
                 completed: !task.completed,
                 completed_at: !task.completed ? new Date().toISOString() : null,
                 completed_by: !task.completed ? currentUser.id : null
@@ -1637,7 +1637,7 @@
 
         async function deleteTask(id) {
             if (!confirm('Slet denne opgave?')) return;
-            await supabase.from('tasks').delete().eq('id', id);
+            await supabaseClient.from('tasks').delete().eq('id', id);
             await loadTasks();
             updateDashboard();
         }
@@ -1654,7 +1654,7 @@
 
         // ==================== CHAT ====================
         async function loadChats() {
-            const { data } = await supabase
+            const { data } = await supabaseClient
                 .from('chats')
                 .select('*')
                 .eq('organization_id', currentOrg.id)
@@ -1687,7 +1687,7 @@
             e.preventDefault();
             const name = document.getElementById('chat-name').value;
 
-            const { data, error } = await supabase
+            const { data, error } = await supabaseClient
                 .from('chats')
                 .insert({
                     organization_id: currentOrg.id,
@@ -1723,7 +1723,7 @@
             await loadMessages();
 
             // Subscribe to new messages
-            messageSubscription = supabase
+            messageSubscription = supabaseClient
                 .channel(`messages:${chatId}`)
                 .on('postgres_changes', {
                     event: 'INSERT',
@@ -1739,7 +1739,7 @@
         async function loadMessages() {
             if (!activeChat) return;
 
-            const { data } = await supabase
+            const { data } = await supabaseClient
                 .from('messages')
                 .select('*')
                 .eq('chat_id', activeChat.id)
@@ -1790,7 +1790,7 @@
 
             input.value = '';
 
-            await supabase.from('messages').insert({
+            await supabaseClient.from('messages').insert({
                 chat_id: activeChat.id,
                 sender_id: currentUser.id,
                 content: content
@@ -1802,7 +1802,7 @@
             e.preventDefault();
             const name = document.getElementById('org-name').value;
 
-            const { data, error } = await supabase
+            const { data, error } = await supabaseClient
                 .from('organizations')
                 .insert({
                     name: name,
@@ -1834,7 +1834,7 @@
         }
 
         async function acceptInvitation(invitationId) {
-            const { data: inv } = await supabase
+            const { data: inv } = await supabaseClient
                 .from('invitations')
                 .select('*')
                 .eq('id', invitationId)
@@ -1842,7 +1842,7 @@
 
             if (inv) {
                 // Add as member
-                await supabase.from('members').insert({
+                await supabaseClient.from('members').insert({
                     organization_id: inv.organization_id,
                     user_id: currentUser.id,
                     email: currentUser.email,
@@ -1851,14 +1851,14 @@
                 });
 
                 // Delete invitation
-                await supabase.from('invitations').delete().eq('id', invitationId);
+                await supabaseClient.from('invitations').delete().eq('id', invitationId);
 
                 await loadUserData();
             }
         }
 
         async function declineInvitation(invitationId) {
-            await supabase.from('invitations').delete().eq('id', invitationId);
+            await supabaseClient.from('invitations').delete().eq('id', invitationId);
             await loadUserData();
         }
 
