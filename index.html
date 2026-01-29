@@ -1801,20 +1801,57 @@
         async function createOrganization(e) {
             e.preventDefault();
             const name = document.getElementById('org-name').value;
+            const submitBtn = e.target.querySelector('button[type="submit"]');
 
-            const { data, error } = await supabaseClient
-                .from('organizations')
-                .insert({
-                    name: name,
-                    created_by: currentUser.id
-                })
-                .select()
-                .single();
+            try {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Opretter...';
 
-            if (error) {
-                alert('Fejl: ' + error.message);
-            } else {
+                console.log('Creating organization:', name);
+
+                // First create the organization
+                const { data: orgData, error: orgError } = await supabaseClient
+                    .from('organizations')
+                    .insert({
+                        name: name,
+                        created_by: currentUser.id
+                    })
+                    .select()
+                    .single();
+
+                if (orgError) {
+                    console.error('Organization creation error:', orgError);
+                    alert('Fejl ved oprettelse af organisation: ' + orgError.message);
+                    return;
+                }
+
+                console.log('Organization created:', orgData);
+
+                // Manually add creator as admin member (in case trigger doesn't work)
+                const { error: memberError } = await supabaseClient
+                    .from('members')
+                    .insert({
+                        organization_id: orgData.id,
+                        user_id: currentUser.id,
+                        email: currentUser.email,
+                        role: 'admin',
+                        display_name: currentUser.user_metadata?.display_name || currentUser.email
+                    });
+
+                if (memberError) {
+                    console.log('Member insert note:', memberError.message);
+                    // Ignore duplicate error since trigger might have already added
+                }
+
+                console.log('Reloading user data...');
                 await loadUserData();
+
+            } catch (err) {
+                console.error('Unexpected error:', err);
+                alert('Der opstod en uventet fejl: ' + err.message);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Opret organisation';
             }
         }
 
