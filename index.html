@@ -2564,14 +2564,35 @@
             e.preventDefault();
             const email = document.getElementById('login-email').value;
             const password = document.getElementById('login-password').value;
+            const submitBtn = e.target.querySelector('button[type="submit"]');
 
-            const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+            try {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Logger ind...';
 
-            if (error) {
-                showAuthError(error.message);
-            } else {
-                currentUser = data.user;
-                await loadUserData();
+                const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+
+                if (error) {
+                    // Translate common error messages to Danish
+                    let errorMessage = error.message;
+                    if (error.message.includes('Invalid login credentials')) {
+                        errorMessage = 'Forkert email eller adgangskode. Prøv igen.';
+                    } else if (error.message.includes('Email not confirmed')) {
+                        errorMessage = 'Din email er ikke bekræftet endnu. Tjek din indbakke.';
+                    } else if (error.message.includes('Too many requests')) {
+                        errorMessage = 'For mange loginforsøg. Vent venligst et øjeblik og prøv igen.';
+                    }
+                    showAuthError(errorMessage);
+                } else {
+                    currentUser = data.user;
+                    await loadUserData();
+                }
+            } catch (err) {
+                showAuthError('Der opstod en uventet fejl. Prøv venligst igen.');
+                console.error('Login error:', err);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Log ind';
             }
         }
 
@@ -2580,20 +2601,48 @@
             const name = document.getElementById('signup-name').value;
             const email = document.getElementById('signup-email').value;
             const password = document.getElementById('signup-password').value;
+            const submitBtn = e.target.querySelector('button[type="submit"]');
 
-            const { data, error } = await supabaseClient.auth.signUp({
-                email,
-                password,
-                options: {
-                    data: { display_name: name }
+            try {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Opretter konto...';
+
+                const { data, error } = await supabaseClient.auth.signUp({
+                    email,
+                    password,
+                    options: {
+                        data: { display_name: name }
+                    }
+                });
+
+                if (error) {
+                    // Translate common error messages to Danish
+                    let errorMessage = error.message;
+                    if (error.message.includes('already registered') || error.message.includes('already been registered')) {
+                        errorMessage = 'Denne email er allerede registreret. Prøv at logge ind i stedet.';
+                    } else if (error.message.includes('Database error')) {
+                        errorMessage = 'Der opstod en serverfejl. Emailen kan allerede være i brug, eller prøv igen om et øjeblik.';
+                    } else if (error.message.includes('Password')) {
+                        errorMessage = 'Adgangskoden skal være mindst 6 tegn.';
+                    } else if (error.message.includes('Invalid email')) {
+                        errorMessage = 'Ugyldig email-adresse.';
+                    }
+                    showAuthError(errorMessage);
+                } else if (data.user) {
+                    // Check if email confirmation is required (identities empty = user already exists)
+                    if (data.user.identities && data.user.identities.length === 0) {
+                        showAuthError('Denne email er allerede registreret. Prøv at logge ind i stedet.');
+                    } else {
+                        currentUser = data.user;
+                        await loadUserData();
+                    }
                 }
-            });
-
-            if (error) {
-                showAuthError(error.message);
-            } else if (data.user) {
-                currentUser = data.user;
-                await loadUserData();
+            } catch (err) {
+                showAuthError('Der opstod en uventet fejl. Prøv venligst igen.');
+                console.error('Signup error:', err);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Opret konto';
             }
         }
 
