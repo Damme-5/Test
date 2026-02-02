@@ -1417,6 +1417,425 @@
         .hidden {
             display: none !important;
         }
+
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+        }
+
+        .toast {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 16px 20px;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 300px;
+            max-width: 400px;
+            animation: slideIn 0.3s ease, fadeOut 0.3s ease forwards;
+            animation-delay: 0s, var(--toast-duration, 3s);
+            pointer-events: auto;
+            border-left: 4px solid var(--primary);
+        }
+
+        .toast.success {
+            border-left-color: var(--success);
+        }
+
+        .toast.error {
+            border-left-color: var(--danger);
+        }
+
+        .toast.warning {
+            border-left-color: var(--warning);
+        }
+
+        .toast-icon {
+            font-size: 1.4em;
+            flex-shrink: 0;
+        }
+
+        .toast-content {
+            flex: 1;
+        }
+
+        .toast-title {
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 2px;
+        }
+
+        .toast-message {
+            font-size: 0.9em;
+            color: var(--text-medium);
+        }
+
+        .toast-close {
+            background: none;
+            border: none;
+            color: var(--text-light);
+            cursor: pointer;
+            padding: 4px;
+            font-size: 1.2em;
+            transition: color 0.2s;
+        }
+
+        .toast-close:hover {
+            color: var(--text-dark);
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+            }
+            to {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+        }
+
+        /* Custom Confirmation Dialog */
+        .confirm-dialog {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 300;
+        }
+
+        .confirm-dialog.active {
+            display: flex;
+        }
+
+        .confirm-box {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: 28px;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: var(--shadow-lg);
+            animation: popIn 0.2s ease;
+        }
+
+        @keyframes popIn {
+            from {
+                transform: scale(0.9);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .confirm-icon {
+            font-size: 3em;
+            margin-bottom: 16px;
+        }
+
+        .confirm-title {
+            font-size: 1.25em;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 8px;
+        }
+
+        .confirm-message {
+            color: var(--text-medium);
+            margin-bottom: 24px;
+            line-height: 1.5;
+        }
+
+        .confirm-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .confirm-actions .btn {
+            min-width: 100px;
+        }
+
+        /* Task completion animation */
+        .task-item.completing {
+            animation: taskComplete 0.4s ease forwards;
+        }
+
+        @keyframes taskComplete {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.02);
+                background: rgba(34, 197, 94, 0.1);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .task-checkbox.checking {
+            animation: checkPop 0.3s ease;
+        }
+
+        @keyframes checkPop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(1); }
+        }
+
+        /* Loading Skeleton */
+        .skeleton {
+            background: linear-gradient(90deg, var(--bg-light) 25%, var(--border) 50%, var(--bg-light) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: var(--radius);
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .skeleton-card {
+            height: 100px;
+            margin-bottom: 12px;
+        }
+
+        .skeleton-text {
+            height: 16px;
+            margin-bottom: 8px;
+            width: 80%;
+        }
+
+        .skeleton-text.short {
+            width: 40%;
+        }
+
+        /* Progress Ring */
+        .progress-ring {
+            position: relative;
+            width: 60px;
+            height: 60px;
+        }
+
+        .progress-ring svg {
+            transform: rotate(-90deg);
+        }
+
+        .progress-ring-circle {
+            fill: none;
+            stroke: var(--border);
+            stroke-width: 6;
+        }
+
+        .progress-ring-progress {
+            fill: none;
+            stroke: var(--primary);
+            stroke-width: 6;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 0.5s ease;
+        }
+
+        .progress-ring-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 0.9em;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        /* Improved Empty States */
+        .empty-state-enhanced {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-light);
+        }
+
+        .empty-state-enhanced .empty-icon {
+            font-size: 4em;
+            margin-bottom: 16px;
+            opacity: 0.5;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .empty-state-enhanced h3 {
+            color: var(--text-dark);
+            font-size: 1.2em;
+            margin-bottom: 8px;
+        }
+
+        .empty-state-enhanced p {
+            font-size: 0.95em;
+            margin-bottom: 20px;
+            max-width: 300px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Modal Tabs */
+        .modal-tabs {
+            display: flex;
+            gap: 0;
+            margin-bottom: 24px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .modal-tab {
+            padding: 12px 20px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: 500;
+            color: var(--text-medium);
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+            transition: all 0.2s;
+        }
+
+        .modal-tab:hover {
+            color: var(--text-dark);
+        }
+
+        .modal-tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .modal-tab-content {
+            display: none;
+        }
+
+        .modal-tab-content.active {
+            display: block;
+            animation: fadeIn 0.2s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Quick Stats Enhancement */
+        .stat-card-enhanced {
+            position: relative;
+        }
+
+        .stat-card-enhanced .stat-trend {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            font-size: 0.8em;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+
+        .stat-trend.up {
+            background: rgba(34, 197, 94, 0.1);
+            color: var(--success);
+        }
+
+        .stat-trend.down {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+        }
+
+        /* Overdue task indicator */
+        .overdue-badge {
+            background: var(--danger);
+            color: white;
+            font-size: 0.7em;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: 600;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        /* Responsive toast */
+        @media (max-width: 768px) {
+            .toast-container {
+                left: 16px;
+                right: 16px;
+                top: auto;
+                bottom: 90px;
+            }
+
+            .toast {
+                min-width: auto;
+                max-width: none;
+            }
+        }
+
+        /* Link buttons in modals */
+        a.btn {
+            text-decoration: none;
+            display: inline-flex;
+        }
+
+        /* Case detail modal enhancements */
+        #case-detail-content {
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        #case-detail-content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        #case-detail-content::-webkit-scrollbar-track {
+            background: var(--bg-light);
+            border-radius: 3px;
+        }
+
+        #case-detail-content::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+
+        #case-detail-content::-webkit-scrollbar-thumb:hover {
+            background: var(--text-light);
+        }
     </style>
 </head>
 <body>
@@ -1577,6 +1996,16 @@
                         </div>
                         <div class="card">
                             <div class="card-header">
+                                <span class="card-title">Dagens fremgang</span>
+                            </div>
+                            <div id="dashboard-progress" style="display: flex; align-items: center; gap: 20px; padding: 20px;">
+                                <div id="progress-ring-container"></div>
+                                <div>
+                                    <div style="font-size: 1.1em; font-weight: 600; color: var(--text-dark); margin-bottom: 4px;">Opgaver fuldført</div>
+                                    <div style="color: var(--text-light);" id="progress-text">0 af 0 opgaver i dag</div>
+                                </div>
+                            </div>
+                            <div class="card-header" style="border-top: 1px solid var(--border); margin-top: 0;">
                                 <span class="card-title">Seneste aktivitet</span>
                             </div>
                             <div class="activity-feed" id="activity-feed"></div>
@@ -1791,130 +2220,136 @@
     <div class="modal-overlay" id="case-modal">
         <div class="modal" style="max-width: 600px;">
             <div class="modal-header">
-                <h2 class="modal-title">Ny sag</h2>
+                <h2 class="modal-title" id="case-modal-title">Ny sag</h2>
                 <button class="modal-close" onclick="closeModal('case-modal')">&times;</button>
             </div>
+
+            <!-- Modal Tabs -->
+            <div class="modal-tabs">
+                <button type="button" class="modal-tab active" data-tab="basic" onclick="switchCaseTab('basic')">📋 Grundlæggende</button>
+                <button type="button" class="modal-tab" data-tab="details" onclick="switchCaseTab('details')">💼 Detaljer</button>
+                <button type="button" class="modal-tab" data-tab="contact" onclick="switchCaseTab('contact')">📇 Kontakt</button>
+            </div>
+
             <form onsubmit="saveCase(event)">
                 <input type="hidden" id="case-id">
 
-                <!-- Basis info -->
-                <div class="form-group">
-                    <label>Titel *</label>
-                    <input type="text" id="case-title" class="form-control" placeholder="F.eks. Glostrup Øjenlæge" required>
-                </div>
-                <div class="form-group">
-                    <label>Kategori</label>
-                    <select id="case-category" class="form-control">
-                        <option value="">Vælg kategori...</option>
-                        <option value="health">🏥 Sundhed</option>
-                        <option value="finance">💰 Økonomi</option>
-                        <option value="housing">🏠 Bolig</option>
-                        <option value="insurance">🛡️ Forsikring</option>
-                        <option value="subscription">📱 Abonnement</option>
-                        <option value="car">🚗 Bil</option>
-                        <option value="family">👨‍👩‍👧‍👦 Familie</option>
-                        <option value="work">💼 Arbejde</option>
-                        <option value="education">📚 Uddannelse</option>
-                        <option value="legal">⚖️ Juridisk</option>
-                        <option value="other">📋 Andet</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Beskrivelse</label>
-                    <textarea id="case-description" class="form-control" placeholder="Beskriv sagen..."></textarea>
-                </div>
-
-                <!-- Økonomi -->
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <!-- Tab: Basic Info -->
+                <div class="modal-tab-content active" id="case-tab-basic">
                     <div class="form-group">
-                        <label>💰 Månedlig pris (kr)</label>
-                        <input type="number" id="case-monthly-price" class="form-control" placeholder="0" min="0" step="0.01">
+                        <label>Titel *</label>
+                        <input type="text" id="case-title" class="form-control" placeholder="F.eks. Glostrup Øjenlæge" required>
                     </div>
                     <div class="form-group">
-                        <label>💳 Betalingsfrekvens</label>
-                        <select id="case-payment-frequency" class="form-control">
-                            <option value="">Ikke relevant</option>
-                            <option value="monthly">Månedlig</option>
-                            <option value="quarterly">Kvartalsvis</option>
-                            <option value="yearly">Årlig</option>
-                            <option value="once">Engangsbetaling</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Status og prioritet -->
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                    <div class="form-group">
-                        <label>Status</label>
-                        <select id="case-status" class="form-control">
-                            <option value="open">🟢 Aktiv</option>
-                            <option value="progress">🟡 I gang</option>
-                            <option value="pending">🟠 Afventer</option>
-                            <option value="closed">⚫ Afsluttet</option>
+                        <label>Kategori</label>
+                        <select id="case-category" class="form-control">
+                            <option value="">Vælg kategori...</option>
+                            <option value="health">🏥 Sundhed</option>
+                            <option value="finance">💰 Økonomi</option>
+                            <option value="housing">🏠 Bolig</option>
+                            <option value="insurance">🛡️ Forsikring</option>
+                            <option value="subscription">📱 Abonnement</option>
+                            <option value="car">🚗 Bil</option>
+                            <option value="family">👨‍👩‍👧‍👦 Familie</option>
+                            <option value="work">💼 Arbejde</option>
+                            <option value="education">📚 Uddannelse</option>
+                            <option value="legal">⚖️ Juridisk</option>
+                            <option value="other">📋 Andet</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>Prioritet</label>
-                        <select id="case-priority" class="form-control">
-                            <option value="low">🔵 Lav</option>
-                            <option value="medium" selected>🟢 Normal</option>
-                            <option value="high">🔴 Høj</option>
-                        </select>
+                        <label>Beskrivelse</label>
+                        <textarea id="case-description" class="form-control" placeholder="Beskriv sagen..."></textarea>
                     </div>
-                </div>
-
-                <!-- Datoer -->
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                    <div class="form-group">
-                        <label>📅 Start dato</label>
-                        <input type="date" id="case-start-date" class="form-control">
-                    </div>
-                    <div class="form-group">
-                        <label>📅 Slut dato / Fornyelse</label>
-                        <input type="date" id="case-end-date" class="form-control">
-                    </div>
-                </div>
-
-                <!-- Kontakt info -->
-                <div class="form-group" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border);">
-                    <label style="font-weight: 600; margin-bottom: 12px; display: block;">📇 Kontaktoplysninger</label>
-                </div>
-                <div class="form-group">
-                    <label>Kontaktperson</label>
-                    <input type="text" id="case-contact-name" class="form-control" placeholder="Navn på kontaktperson">
-                </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                    <div class="form-group">
-                        <label>📞 Telefon</label>
-                        <input type="tel" id="case-contact-phone" class="form-control" placeholder="+45 12 34 56 78">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        <div class="form-group">
+                            <label>Status</label>
+                            <select id="case-status" class="form-control">
+                                <option value="open">🟢 Aktiv</option>
+                                <option value="progress">🟡 I gang</option>
+                                <option value="pending">🟠 Afventer</option>
+                                <option value="closed">⚫ Afsluttet</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Prioritet</label>
+                            <select id="case-priority" class="form-control">
+                                <option value="low">🔵 Lav</option>
+                                <option value="medium" selected>🟢 Normal</option>
+                                <option value="high">🔴 Høj</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="form-group">
-                        <label>📧 Email</label>
-                        <input type="email" id="case-contact-email" class="form-control" placeholder="email@example.dk">
+                        <label>👤 Tildelt til</label>
+                        <select id="case-assigned" class="form-control"></select>
                     </div>
                 </div>
-                <div class="form-group">
-                    <label>📍 Adresse</label>
-                    <input type="text" id="case-address" class="form-control" placeholder="Gade, postnummer, by">
-                </div>
-                <div class="form-group">
-                    <label>🔗 Website / Link</label>
-                    <input type="url" id="case-website" class="form-control" placeholder="https://...">
+
+                <!-- Tab: Details -->
+                <div class="modal-tab-content" id="case-tab-details">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        <div class="form-group">
+                            <label>💰 Månedlig pris (kr)</label>
+                            <input type="number" id="case-monthly-price" class="form-control" placeholder="0" min="0" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label>💳 Betalingsfrekvens</label>
+                            <select id="case-payment-frequency" class="form-control">
+                                <option value="">Ikke relevant</option>
+                                <option value="monthly">Månedlig</option>
+                                <option value="quarterly">Kvartalsvis</option>
+                                <option value="yearly">Årlig</option>
+                                <option value="once">Engangsbetaling</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        <div class="form-group">
+                            <label>📅 Start dato</label>
+                            <input type="date" id="case-start-date" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label>📅 Slut dato / Fornyelse</label>
+                            <input type="date" id="case-end-date" class="form-control">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>🔗 Website / Link</label>
+                        <input type="url" id="case-website" class="form-control" placeholder="https://...">
+                    </div>
+                    <div class="form-group">
+                        <label>📝 Interne noter</label>
+                        <textarea id="case-notes" class="form-control" placeholder="Private noter om sagen..." style="min-height: 100px;"></textarea>
+                    </div>
                 </div>
 
-                <!-- Tildeling -->
-                <div class="form-group" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border);">
-                    <label>👤 Tildelt til</label>
-                    <select id="case-assigned" class="form-control"></select>
+                <!-- Tab: Contact -->
+                <div class="modal-tab-content" id="case-tab-contact">
+                    <div class="form-group">
+                        <label>Kontaktperson</label>
+                        <input type="text" id="case-contact-name" class="form-control" placeholder="Navn på kontaktperson">
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        <div class="form-group">
+                            <label>📞 Telefon</label>
+                            <input type="tel" id="case-contact-phone" class="form-control" placeholder="+45 12 34 56 78">
+                        </div>
+                        <div class="form-group">
+                            <label>📧 Email</label>
+                            <input type="email" id="case-contact-email" class="form-control" placeholder="email@example.dk">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>📍 Adresse</label>
+                        <input type="text" id="case-address" class="form-control" placeholder="Gade, postnummer, by">
+                    </div>
+                    <p style="color: var(--text-light); font-size: 0.85em; margin-top: 16px; padding: 12px; background: var(--bg-light); border-radius: var(--radius);">
+                        💡 Tip: Udfyld kontaktoplysninger for hurtig adgang til opkald og email direkte fra sagslisten.
+                    </p>
                 </div>
 
-                <!-- Noter -->
-                <div class="form-group">
-                    <label>📝 Interne noter</label>
-                    <textarea id="case-notes" class="form-control" placeholder="Private noter om sagen..." style="min-height: 80px;"></textarea>
-                </div>
-
-                <button type="submit" class="btn btn-primary" style="width:100%; margin-top: 16px;">Gem sag</button>
+                <button type="submit" class="btn btn-primary" style="width:100%; margin-top: 20px;">Gem sag</button>
             </form>
         </div>
     </div>
@@ -2016,6 +2451,37 @@
                 </div>
                 <button type="submit" class="btn btn-primary" style="width:100%">Gem link</button>
             </form>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- Confirmation Dialog -->
+    <div class="confirm-dialog" id="confirm-dialog">
+        <div class="confirm-box">
+            <div class="confirm-icon" id="confirm-icon">⚠️</div>
+            <h3 class="confirm-title" id="confirm-title">Er du sikker?</h3>
+            <p class="confirm-message" id="confirm-message">Denne handling kan ikke fortrydes.</p>
+            <div class="confirm-actions">
+                <button class="btn btn-outline" onclick="closeConfirmDialog(false)">Annullér</button>
+                <button class="btn btn-danger" id="confirm-btn" onclick="closeConfirmDialog(true)">Bekræft</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Case Detail Modal -->
+    <div class="modal-overlay" id="case-detail-modal">
+        <div class="modal" style="max-width: 550px;">
+            <div class="modal-header">
+                <h2 class="modal-title" id="case-detail-title">Sagsdetaljer</h2>
+                <button class="modal-close" onclick="closeModal('case-detail-modal')">&times;</button>
+            </div>
+            <div id="case-detail-content"></div>
+            <div style="display: flex; gap: 12px; margin-top: 20px;">
+                <button class="btn btn-primary" style="flex: 1;" id="case-detail-edit-btn">Rediger</button>
+                <button class="btn btn-outline" style="flex: 1;" onclick="closeModal('case-detail-modal')">Luk</button>
+            </div>
         </div>
     </div>
 
@@ -2289,11 +2755,12 @@
                 });
 
             if (error) {
-                alert('Fejl: ' + error.message);
+                showToast('Kunne ikke sende invitation: ' + error.message, 'error');
             } else {
                 closeModal('invite-modal');
                 document.getElementById('invite-email').value = '';
                 loadInvitations();
+                showToast(`Invitation sendt til ${email}`, 'success');
             }
         }
 
@@ -2350,11 +2817,13 @@
             const container = document.getElementById('cases-list');
 
             if (filtered.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-state-icon">📁</div>
-                        <p>Ingen sager fundet</p>
-                    </div>`;
+                container.innerHTML = renderEmptyState(
+                    '📁',
+                    'Ingen sager fundet',
+                    caseSearchQuery ? 'Prøv at ændre din søgning eller fjern filteret.' : 'Opret din første sag for at komme i gang med at holde styr på dine vigtige informationer.',
+                    caseSearchQuery ? null : '+ Opret første sag',
+                    caseSearchQuery ? null : "openModal('case-modal')"
+                );
                 return;
             }
 
@@ -2399,28 +2868,110 @@
 
             const meta = c.metadata || {};
             const assignee = members.find(m => m.user_id === c.assigned_to);
+            const categoryIcon = getCategoryIcon(meta.category);
 
-            let details = `
-                <strong>Titel:</strong> ${escapeHtml(c.title)}<br>
-                <strong>Status:</strong> ${getStatusText(c.status)}<br>
-                <strong>Prioritet:</strong> ${c.priority}<br>
-                <strong>Tildelt:</strong> ${assignee ? (assignee.display_name || assignee.email) : 'Ingen'}<br>
+            let html = `
+                <div style="margin-bottom: 20px;">
+                    <span class="status-badge status-${c.status}" style="margin-right: 8px;">${getStatusText(c.status)}</span>
+                    ${meta.category ? `<span style="font-size: 0.85em; color: var(--text-medium);">${getCategoryText(meta.category)}</span>` : ''}
+                </div>
             `;
 
-            if (c.description) details += `<br><strong>Beskrivelse:</strong><br>${escapeHtml(c.description)}<br>`;
-            if (meta.category) details += `<br><strong>Kategori:</strong> ${getCategoryText(meta.category)}`;
-            if (meta.monthly_price) details += `<br><strong>Månedlig pris:</strong> ${formatPrice(meta.monthly_price)}`;
-            if (meta.payment_frequency) details += `<br><strong>Betalingsfrekvens:</strong> ${meta.payment_frequency}`;
-            if (meta.start_date) details += `<br><strong>Start dato:</strong> ${formatDate(meta.start_date)}`;
-            if (meta.end_date) details += `<br><strong>Slut dato:</strong> ${formatDate(meta.end_date)}`;
-            if (meta.contact_name) details += `<br><br><strong>Kontaktperson:</strong> ${escapeHtml(meta.contact_name)}`;
-            if (meta.contact_phone) details += `<br><strong>Telefon:</strong> ${meta.contact_phone}`;
-            if (meta.contact_email) details += `<br><strong>Email:</strong> ${meta.contact_email}`;
-            if (meta.address) details += `<br><strong>Adresse:</strong> ${escapeHtml(meta.address)}`;
-            if (meta.website) details += `<br><strong>Website:</strong> <a href="${meta.website}" target="_blank">${meta.website}</a>`;
-            if (meta.notes) details += `<br><br><strong>Noter:</strong><br>${escapeHtml(meta.notes)}`;
+            if (c.description) {
+                html += `<p style="color: var(--text-medium); margin-bottom: 16px; line-height: 1.6;">${escapeHtml(c.description)}</p>`;
+            }
 
-            alert(details.replace(/<br>/g, '\n').replace(/<[^>]+>/g, ''));
+            html += `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">`;
+
+            // Left column
+            html += `<div>`;
+            html += `<div style="font-size: 0.8em; color: var(--text-light); text-transform: uppercase; margin-bottom: 4px;">Prioritet</div>`;
+            html += `<div style="font-weight: 500; margin-bottom: 12px;">${getPriorityText(c.priority)}</div>`;
+
+            html += `<div style="font-size: 0.8em; color: var(--text-light); text-transform: uppercase; margin-bottom: 4px;">Tildelt til</div>`;
+            html += `<div style="font-weight: 500; margin-bottom: 12px;">${assignee ? (assignee.display_name || assignee.email) : 'Ingen'}</div>`;
+
+            if (meta.monthly_price) {
+                html += `<div style="font-size: 0.8em; color: var(--text-light); text-transform: uppercase; margin-bottom: 4px;">Månedlig pris</div>`;
+                html += `<div style="font-weight: 600; color: var(--success); margin-bottom: 12px;">${formatPrice(meta.monthly_price)}</div>`;
+            }
+            html += `</div>`;
+
+            // Right column
+            html += `<div>`;
+            if (meta.start_date) {
+                html += `<div style="font-size: 0.8em; color: var(--text-light); text-transform: uppercase; margin-bottom: 4px;">Start dato</div>`;
+                html += `<div style="font-weight: 500; margin-bottom: 12px;">${formatDate(meta.start_date)}</div>`;
+            }
+            if (meta.end_date) {
+                html += `<div style="font-size: 0.8em; color: var(--text-light); text-transform: uppercase; margin-bottom: 4px;">Slut dato</div>`;
+                html += `<div style="font-weight: 500; margin-bottom: 12px;">${formatDate(meta.end_date)}</div>`;
+            }
+            if (meta.payment_frequency) {
+                html += `<div style="font-size: 0.8em; color: var(--text-light); text-transform: uppercase; margin-bottom: 4px;">Betalingsfrekvens</div>`;
+                html += `<div style="font-weight: 500; margin-bottom: 12px;">${getPaymentFrequencyText(meta.payment_frequency)}</div>`;
+            }
+            html += `</div>`;
+            html += `</div>`;
+
+            // Contact info
+            if (meta.contact_name || meta.contact_phone || meta.contact_email || meta.address) {
+                html += `<div style="border-top: 1px solid var(--border); padding-top: 16px; margin-top: 8px;">`;
+                html += `<div style="font-size: 0.8em; color: var(--text-light); text-transform: uppercase; margin-bottom: 12px;">📇 Kontaktoplysninger</div>`;
+
+                if (meta.contact_name) {
+                    html += `<div style="margin-bottom: 8px;"><strong>${escapeHtml(meta.contact_name)}</strong></div>`;
+                }
+
+                if (meta.contact_phone || meta.contact_email) {
+                    html += `<div style="display: flex; gap: 12px; margin-bottom: 8px;">`;
+                    if (meta.contact_phone) {
+                        html += `<a href="tel:${meta.contact_phone}" class="btn btn-small btn-outline">📞 ${meta.contact_phone}</a>`;
+                    }
+                    if (meta.contact_email) {
+                        html += `<a href="mailto:${meta.contact_email}" class="btn btn-small btn-outline">📧 Email</a>`;
+                    }
+                    html += `</div>`;
+                }
+
+                if (meta.address) {
+                    html += `<div style="color: var(--text-medium); font-size: 0.9em;">📍 ${escapeHtml(meta.address)}</div>`;
+                }
+                html += `</div>`;
+            }
+
+            // Website
+            if (meta.website) {
+                html += `<div style="margin-top: 12px;">`;
+                html += `<a href="${meta.website}" target="_blank" class="btn btn-small btn-outline">🔗 Åbn website</a>`;
+                html += `</div>`;
+            }
+
+            // Notes
+            if (meta.notes) {
+                html += `<div style="border-top: 1px solid var(--border); padding-top: 16px; margin-top: 16px;">`;
+                html += `<div style="font-size: 0.8em; color: var(--text-light); text-transform: uppercase; margin-bottom: 8px;">📝 Noter</div>`;
+                html += `<div style="color: var(--text-medium); font-size: 0.9em; line-height: 1.6; background: var(--bg-light); padding: 12px; border-radius: var(--radius);">${escapeHtml(meta.notes)}</div>`;
+                html += `</div>`;
+            }
+
+            document.getElementById('case-detail-title').textContent = `${categoryIcon ? categoryIcon + ' ' : ''}${c.title}`;
+            document.getElementById('case-detail-content').innerHTML = html;
+            document.getElementById('case-detail-edit-btn').onclick = () => {
+                closeModal('case-detail-modal');
+                editCase(id);
+            };
+            openModal('case-detail-modal');
+        }
+
+        function getPriorityText(priority) {
+            const texts = { low: '🔵 Lav', medium: '🟢 Normal', high: '🔴 Høj' };
+            return texts[priority] || priority;
+        }
+
+        function getPaymentFrequencyText(freq) {
+            const texts = { monthly: 'Månedlig', quarterly: 'Kvartalsvis', yearly: 'Årlig', once: 'Engangsbetaling' };
+            return texts[freq] || freq;
         }
 
         function getCategoryIcon(category) {
@@ -2500,8 +3051,10 @@
 
             if (id) {
                 await supabaseClient.from('cases').update(caseData).eq('id', id);
+                showToast('Sagen er blevet opdateret', 'success');
             } else {
                 await supabaseClient.from('cases').insert(caseData);
+                showToast('Ny sag oprettet', 'success');
             }
 
             closeModal('case-modal');
@@ -2536,14 +3089,27 @@
             document.getElementById('case-website').value = meta.website || '';
             document.getElementById('case-notes').value = meta.notes || '';
 
+            // Update modal title and reset to first tab
+            document.getElementById('case-modal-title').textContent = 'Rediger sag';
+            switchCaseTab('basic');
+
             openModal('case-modal');
         }
 
         async function deleteCase(id) {
-            if (!confirm('Slet denne sag?')) return;
+            const confirmed = await showConfirm(
+                'Slet sag?',
+                'Er du sikker på, at du vil slette denne sag? Alle tilknyttede data vil blive slettet permanent.',
+                '🗑️',
+                'Slet sag',
+                true
+            );
+            if (!confirmed) return;
+
             await supabaseClient.from('cases').delete().eq('id', id);
             await loadCases();
             updateDashboard();
+            showToast('Sagen er blevet slettet', 'success');
         }
 
         function resetCaseForm() {
@@ -2566,6 +3132,22 @@
             document.getElementById('case-address').value = '';
             document.getElementById('case-website').value = '';
             document.getElementById('case-notes').value = '';
+
+            // Reset tabs to first tab
+            switchCaseTab('basic');
+            document.getElementById('case-modal-title').textContent = 'Ny sag';
+        }
+
+        function switchCaseTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('#case-modal .modal-tab').forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.tab === tabName);
+            });
+
+            // Update tab content
+            document.querySelectorAll('#case-modal .modal-tab-content').forEach(content => {
+                content.classList.toggle('active', content.id === `case-tab-${tabName}`);
+            });
         }
 
         function populateCaseSelect() {
@@ -2634,11 +3216,14 @@
             const container = document.getElementById('tasks-list');
 
             if (filtered.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-state-icon">✅</div>
-                        <p>Ingen opgaver fundet</p>
-                    </div>`;
+                const hasFilters = currentTaskFilter !== 'all' || currentPersonFilter;
+                container.innerHTML = renderEmptyState(
+                    '✅',
+                    hasFilters ? 'Ingen opgaver matcher filteret' : 'Ingen opgaver endnu',
+                    hasFilters ? 'Prøv at ændre dit filter for at se flere opgaver.' : 'Opret din første opgave for at begynde at holde styr på dine daglige gøremål.',
+                    hasFilters ? null : '+ Opret første opgave',
+                    hasFilters ? null : "openModal('task-modal')"
+                );
                 return;
             }
 
@@ -2694,8 +3279,10 @@
 
             if (id) {
                 await supabaseClient.from('tasks').update(taskData).eq('id', id);
+                showToast('Opgaven er blevet opdateret', 'success');
             } else {
                 await supabaseClient.from('tasks').insert(taskData);
+                showToast('Ny opgave oprettet', 'success');
             }
 
             closeModal('task-modal');
@@ -2708,21 +3295,44 @@
             const task = tasks.find(t => t.id === id);
             if (!task) return;
 
+            // Add animation to the task item
+            const taskElement = document.querySelector(`.task-item .task-checkbox[onclick*="${id}"]`)?.closest('.task-item');
+            const checkboxElement = document.querySelector(`.task-checkbox[onclick*="${id}"]`);
+
+            if (!task.completed && taskElement) {
+                taskElement.classList.add('completing');
+                checkboxElement?.classList.add('checking');
+            }
+
             await supabaseClient.from('tasks').update({
                 completed: !task.completed,
                 completed_at: !task.completed ? new Date().toISOString() : null,
                 completed_by: !task.completed ? currentUser.id : null
             }).eq('id', id);
 
+            // Show toast for completion
+            if (!task.completed) {
+                showToast(`"${task.title}" er fuldført!`, 'success', 'Godt arbejde! 🎉');
+            }
+
             await loadTasks();
             updateDashboard();
         }
 
         async function deleteTask(id) {
-            if (!confirm('Slet denne opgave?')) return;
+            const confirmed = await showConfirm(
+                'Slet opgave?',
+                'Er du sikker på, at du vil slette denne opgave?',
+                '🗑️',
+                'Slet opgave',
+                true
+            );
+            if (!confirmed) return;
+
             await supabaseClient.from('tasks').delete().eq('id', id);
             await loadTasks();
             updateDashboard();
+            showToast('Opgaven er blevet slettet', 'success');
         }
 
         function resetTaskForm() {
@@ -2781,12 +3391,13 @@
                 .single();
 
             if (error) {
-                alert('Fejl: ' + error.message);
+                showToast('Kunne ikke oprette samtale: ' + error.message, 'error');
             } else {
                 closeModal('chat-modal');
                 document.getElementById('chat-name').value = '';
                 await loadChats();
                 selectChat(data.id);
+                showToast(`Samtalen "${name}" er oprettet`, 'success');
             }
         }
 
@@ -2973,7 +3584,7 @@
         async function handleGoogleCallback(response) {
             if (response.error) {
                 console.error('Google Auth Error:', response);
-                alert('Kunne ikke forbinde til Google: ' + response.error);
+                showToast('Kunne ikke forbinde til Google: ' + response.error, 'error');
                 return;
             }
 
@@ -2990,9 +3601,10 @@
 
                 showDriveConnected();
                 loadDriveFiles();
+                showToast('Google Drive forbundet!', 'success');
             } catch (error) {
                 console.error('Error getting user info:', error);
-                alert('Kunne ikke hente brugeroplysninger');
+                showToast('Kunne ikke hente brugeroplysninger', 'error');
             }
         }
 
@@ -3008,19 +3620,27 @@
             }
         }
 
-        function disconnectGoogleDrive() {
-            if (confirm('Afbryd forbindelsen til Google Drive?')) {
-                googleAccessToken = null;
-                googleUser = null;
-                driveFiles = [];
+        async function disconnectGoogleDrive() {
+            const confirmed = await showConfirm(
+                'Afbryd Google Drive?',
+                'Er du sikker på, at du vil afbryde forbindelsen til Google Drive?',
+                '🔌',
+                'Afbryd',
+                true
+            );
+            if (!confirmed) return;
 
-                localStorage.removeItem('googleAccessToken');
-                localStorage.removeItem('googleUser');
+            googleAccessToken = null;
+            googleUser = null;
+            driveFiles = [];
 
-                document.getElementById('drive-not-connected').classList.remove('hidden');
-                document.getElementById('drive-connected').classList.add('hidden');
-                document.getElementById('drive-files').innerHTML = '';
-            }
+            localStorage.removeItem('googleAccessToken');
+            localStorage.removeItem('googleUser');
+
+            document.getElementById('drive-not-connected').classList.remove('hidden');
+            document.getElementById('drive-connected').classList.add('hidden');
+            document.getElementById('drive-files').innerHTML = '';
+            showToast('Google Drive er afbrudt', 'info');
         }
 
         async function loadDriveFiles() {
@@ -3040,8 +3660,15 @@
                 if (!response.ok) {
                     if (response.status === 401) {
                         // Token expired, disconnect
-                        disconnectGoogleDrive();
-                        alert('Din Google session er udløbet. Log venligst ind igen.');
+                        googleAccessToken = null;
+                        googleUser = null;
+                        driveFiles = [];
+                        localStorage.removeItem('googleAccessToken');
+                        localStorage.removeItem('googleUser');
+                        document.getElementById('drive-not-connected').classList.remove('hidden');
+                        document.getElementById('drive-connected').classList.add('hidden');
+                        document.getElementById('drive-files').innerHTML = '';
+                        showToast('Din Google session er udløbet. Log venligst ind igen.', 'warning');
                         return;
                     }
                     throw new Error('Failed to fetch files');
@@ -3112,7 +3739,7 @@
 
             // Check if already shared
             if (existing.some(f => f.id === fileId)) {
-                alert('Denne fil er allerede delt med teamet');
+                showToast('Denne fil er allerede delt med teamet', 'warning');
                 return;
             }
 
@@ -3120,7 +3747,7 @@
             localStorage.setItem(storageKey, JSON.stringify(existing));
 
             loadTeamSharedFiles();
-            alert('Filen er nu delt med dit team!');
+            showToast('Filen er nu delt med dit team!', 'success');
         }
 
         function loadTeamSharedFiles() {
@@ -3175,7 +3802,7 @@
                     .single();
 
                 if (orgError) {
-                    alert('Fejl ved oprettelse: ' + orgError.message);
+                    showToast('Fejl ved oprettelse: ' + orgError.message, 'error');
                     return;
                 }
 
@@ -3196,7 +3823,7 @@
                 await loadUserData();
 
             } catch (err) {
-                alert('Der opstod en fejl: ' + err.message);
+                showToast('Der opstod en fejl: ' + err.message, 'error');
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'Opret organisation';
@@ -3254,10 +3881,29 @@
                 t.completed && t.completed_at && new Date(t.completed_at) >= today
             ).length;
 
+            // Calculate today's tasks (created today or recurring)
+            const todaysTasks = tasks.filter(t => {
+                if (t.period === 'daily') return true;
+                if (t.deadline) {
+                    const deadline = new Date(t.deadline);
+                    deadline.setHours(0, 0, 0, 0);
+                    return deadline.getTime() === today.getTime();
+                }
+                return false;
+            });
+
+            const totalTodayTasks = todaysTasks.length || 1; // Avoid division by zero
+            const completedTodayTasks = todaysTasks.filter(t => t.completed).length;
+            const progressPercent = Math.round((completedTodayTasks / totalTodayTasks) * 100);
+
             document.getElementById('stat-cases').textContent = activeCases;
             document.getElementById('stat-tasks').textContent = openTasks;
             document.getElementById('stat-members').textContent = members.length;
             document.getElementById('stat-completed').textContent = completedToday;
+
+            // Update progress ring
+            document.getElementById('progress-ring-container').innerHTML = createProgressRing(todaysTasks.length > 0 ? progressPercent : 0, 70);
+            document.getElementById('progress-text').textContent = `${completedTodayTasks} af ${todaysTasks.length} opgaver i dag`;
 
             // Deadline alerts
             const urgentTasks = tasks.filter(t => {
@@ -3385,12 +4031,128 @@
             return colors[priority] || colors.medium;
         }
 
+        // ==================== TOAST NOTIFICATIONS ====================
+        function showToast(message, type = 'info', title = null, duration = 3000) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.style.setProperty('--toast-duration', `${duration}ms`);
+
+            const icons = {
+                success: '✅',
+                error: '❌',
+                warning: '⚠️',
+                info: 'ℹ️'
+            };
+
+            const titles = {
+                success: 'Succes',
+                error: 'Fejl',
+                warning: 'Advarsel',
+                info: 'Information'
+            };
+
+            toast.innerHTML = `
+                <span class="toast-icon">${icons[type]}</span>
+                <div class="toast-content">
+                    <div class="toast-title">${title || titles[type]}</div>
+                    <div class="toast-message">${message}</div>
+                </div>
+                <button class="toast-close" onclick="this.parentElement.remove()">×</button>
+            `;
+
+            container.appendChild(toast);
+
+            // Remove after animation completes
+            setTimeout(() => {
+                if (toast.parentElement) {
+                    toast.remove();
+                }
+            }, duration + 300);
+        }
+
+        // ==================== CONFIRMATION DIALOG ====================
+        let confirmResolve = null;
+
+        function showConfirm(title, message, icon = '⚠️', confirmText = 'Bekræft', isDanger = true) {
+            return new Promise((resolve) => {
+                confirmResolve = resolve;
+                document.getElementById('confirm-icon').textContent = icon;
+                document.getElementById('confirm-title').textContent = title;
+                document.getElementById('confirm-message').textContent = message;
+
+                const confirmBtn = document.getElementById('confirm-btn');
+                confirmBtn.textContent = confirmText;
+                confirmBtn.className = isDanger ? 'btn btn-danger' : 'btn btn-primary';
+
+                document.getElementById('confirm-dialog').classList.add('active');
+            });
+        }
+
+        function closeConfirmDialog(result) {
+            document.getElementById('confirm-dialog').classList.remove('active');
+            if (confirmResolve) {
+                confirmResolve(result);
+                confirmResolve = null;
+            }
+        }
+
+        // ==================== LOADING STATES ====================
+        function showLoadingSkeleton(containerId, count = 3) {
+            const container = document.getElementById(containerId);
+            let skeletons = '';
+            for (let i = 0; i < count; i++) {
+                skeletons += `
+                    <div class="skeleton skeleton-card">
+                        <div class="skeleton skeleton-text"></div>
+                        <div class="skeleton skeleton-text short"></div>
+                    </div>
+                `;
+            }
+            container.innerHTML = skeletons;
+        }
+
+        // ==================== PROGRESS RING ====================
+        function createProgressRing(percent, size = 60) {
+            const radius = (size - 12) / 2;
+            const circumference = 2 * Math.PI * radius;
+            const offset = circumference - (percent / 100) * circumference;
+
+            return `
+                <div class="progress-ring" style="width: ${size}px; height: ${size}px;">
+                    <svg width="${size}" height="${size}">
+                        <circle class="progress-ring-circle" cx="${size/2}" cy="${size/2}" r="${radius}"/>
+                        <circle class="progress-ring-progress" cx="${size/2}" cy="${size/2}" r="${radius}"
+                            stroke-dasharray="${circumference}"
+                            stroke-dashoffset="${offset}"/>
+                    </svg>
+                    <span class="progress-ring-text">${Math.round(percent)}%</span>
+                </div>
+            `;
+        }
+
+        // ==================== ENHANCED EMPTY STATES ====================
+        function renderEmptyState(icon, title, message, actionText = null, actionFn = null) {
+            let html = `
+                <div class="empty-state-enhanced">
+                    <div class="empty-icon">${icon}</div>
+                    <h3>${title}</h3>
+                    <p>${message}</p>
+            `;
+            if (actionText && actionFn) {
+                html += `<button class="btn btn-primary" onclick="${actionFn}">${actionText}</button>`;
+            }
+            html += '</div>';
+            return html;
+        }
+
         // Close modals & dropdowns
         document.addEventListener('keydown', e => {
             if (e.key === 'Escape') {
                 document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
                 document.querySelectorAll('.filter-menu').forEach(m => m.classList.remove('active'));
                 document.querySelectorAll('.emoji-picker').forEach(m => m.classList.remove('active'));
+                closeConfirmDialog(false);
             }
         });
 
