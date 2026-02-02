@@ -3895,23 +3895,23 @@
         }
 
         async function acceptInvitation(invitationId) {
-            const { data: inv } = await supabaseClient
-                .from('invitations')
-                .select('*')
-                .eq('id', invitationId)
-                .single();
-
-            if (inv) {
-                await supabaseClient.from('members').insert({
-                    organization_id: inv.organization_id,
-                    user_id: currentUser.id,
-                    email: currentUser.email,
-                    role: 'member',
-                    display_name: currentUser.user_metadata?.display_name || currentUser.email
+            try {
+                // Use the SQL function which has SECURITY DEFINER to bypass RLS
+                const { error } = await supabaseClient.rpc('accept_invitation', {
+                    invitation_id: invitationId
                 });
 
-                await supabaseClient.from('invitations').delete().eq('id', invitationId);
+                if (error) {
+                    console.error('Error accepting invitation:', error);
+                    showToast('Kunne ikke acceptere invitationen. Prøv igen.', 'error');
+                    return;
+                }
+
+                showToast('Du er nu medlem af organisationen!', 'success');
                 await loadUserData();
+            } catch (err) {
+                console.error('Error accepting invitation:', err);
+                showToast('Der opstod en fejl. Prøv igen.', 'error');
             }
         }
 

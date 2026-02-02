@@ -128,6 +128,16 @@ CREATE POLICY "Admins can add members" ON members
         )
     );
 
+-- Allow users to add themselves as members when they have a pending invitation
+CREATE POLICY "Users can join via invitation" ON members
+    FOR INSERT WITH CHECK (
+        user_id = auth.uid() AND
+        organization_id IN (
+            SELECT organization_id FROM invitations
+            WHERE email = (SELECT email FROM auth.users WHERE id = auth.uid())
+        )
+    );
+
 CREATE POLICY "Admins can update members" ON members
     FOR UPDATE USING (
         organization_id IN (
