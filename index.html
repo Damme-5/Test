@@ -2118,7 +2118,7 @@
                 <div id="page-members" class="page hidden">
                     <div class="page-header">
                         <h1 class="page-title">Medlemmer</h1>
-                        <button class="btn btn-primary" id="invite-btn" onclick="openModal('invite-modal')">+ Invitér</button>
+                        <button class="btn btn-primary" id="invite-btn" onclick="openModal('invite-modal')">+ Tilføj medlem</button>
                     </div>
                     <div class="card">
                         <div id="members-list"></div>
@@ -2434,18 +2434,26 @@
     <div class="modal-overlay" id="invite-modal">
         <div class="modal">
             <div class="modal-header">
-                <h2 class="modal-title">Invitér medlem</h2>
+                <h2 class="modal-title">Opret nyt medlem</h2>
                 <button class="modal-close" onclick="closeModal('invite-modal')">&times;</button>
             </div>
             <form onsubmit="sendInvitation(event)">
                 <div class="form-group">
+                    <label>Navn *</label>
+                    <input type="text" id="invite-name" class="form-control" placeholder="Fulde navn" required>
+                </div>
+                <div class="form-group">
                     <label>Email *</label>
                     <input type="email" id="invite-email" class="form-control" placeholder="partner@email.dk" required>
                 </div>
+                <div class="form-group">
+                    <label>Adgangskode *</label>
+                    <input type="password" id="invite-password" class="form-control" placeholder="Mindst 6 tegn" required minlength="6">
+                </div>
                 <p style="color: var(--text-light); font-size: 0.9em; margin-bottom: 20px;">
-                    Personen modtager en invitation når de logger ind med denne email.
+                    Kontoen oprettes med det samme, og brugeren kan logge ind med ovenstående oplysninger.
                 </p>
-                <button type="submit" class="btn btn-primary" style="width:100%">Send invitation</button>
+                <button type="submit" class="btn btn-primary" style="width:100%">Opret medlem</button>
             </form>
         </div>
     </div>
@@ -2930,23 +2938,48 @@
 
         async function sendInvitation(e) {
             e.preventDefault();
+            const name = document.getElementById('invite-name').value;
             const email = document.getElementById('invite-email').value;
+            const password = document.getElementById('invite-password').value;
 
-            const { error } = await supabaseClient
-                .from('invitations')
-                .insert({
-                    organization_id: currentOrg.id,
-                    email: email,
-                    invited_by: currentUser.id
+            if (password.length < 6) {
+                showToast('Adgangskoden skal være mindst 6 tegn', 'error');
+                return;
+            }
+
+            try {
+                const { data: { session } } = await supabaseClient.auth.getSession();
+
+                const response = await fetch(`${SUPABASE_URL}/functions/v1/create-member`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${session.access_token}`,
+                        'apikey': SUPABASE_ANON_KEY
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        password: password,
+                        display_name: name,
+                        organization_id: currentOrg.id
+                    })
                 });
 
-            if (error) {
-                showToast('Kunne ikke sende invitation: ' + error.message, 'error');
-            } else {
+                const result = await response.json();
+
+                if (!result.success) {
+                    throw new Error(result.error || 'Kunne ikke oprette medlem');
+                }
+
                 closeModal('invite-modal');
+                document.getElementById('invite-name').value = '';
                 document.getElementById('invite-email').value = '';
-                loadInvitations();
-                showToast(`Invitation sendt til ${email}`, 'success');
+                document.getElementById('invite-password').value = '';
+                await loadMembers();
+                showToast(`${name} er nu tilføjet som medlem!`, 'success');
+            } catch (error) {
+                console.error('Error creating member:', error);
+                showToast('Kunne ikke oprette medlem: ' + error.message, 'error');
             }
         }
 
