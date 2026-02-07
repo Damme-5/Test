@@ -4018,45 +4018,38 @@
         // ==================== ORGANIZATION ====================
         async function createOrganization(e) {
             e.preventDefault();
-            const name = document.getElementById('org-name').value;
+            const name = document.getElementById('org-name').value.trim();
             const submitBtn = e.target.querySelector('button[type="submit"]');
+
+            if (submitBtn.disabled) return; // Prevent double-click
 
             try {
                 submitBtn.disabled = true;
                 submitBtn.textContent = 'Opretter...';
 
-                const { data: orgData, error: orgError } = await supabaseClient
+                // Simple insert without chaining
+                const { error: orgError } = await supabaseClient
                     .from('organizations')
                     .insert({
                         name: name,
                         created_by: currentUser.id
-                    })
-                    .select()
-                    .single();
+                    });
 
                 if (orgError) {
                     showToast('Fejl ved oprettelse: ' + orgError.message, 'error');
                     return;
                 }
 
-                const { error: memberError } = await supabaseClient
-                    .from('members')
-                    .insert({
-                        organization_id: orgData.id,
-                        user_id: currentUser.id,
-                        email: currentUser.email,
-                        role: 'admin',
-                        display_name: currentUser.user_metadata?.display_name || currentUser.email
-                    });
+                // Small delay to let trigger complete
+                await new Promise(resolve => setTimeout(resolve, 500));
 
-                if (memberError) {
-                    console.log('Member insert note:', memberError.message);
-                }
-
+                // Reload user data (trigger already added user as admin)
                 await loadUserData();
+                showToast('Organisation oprettet!', 'success');
 
             } catch (err) {
-                showToast('Der opstod en fejl: ' + err.message, 'error');
+                console.error('Create org error:', err);
+                showToast('Der opstod en fejl. Prøv igen.', 'error');
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'Opret organisation';
