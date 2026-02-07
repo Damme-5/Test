@@ -2813,7 +2813,7 @@
             const { data: invitations } = await supabaseClient
                 .from('invitations')
                 .select('*, organizations(name)')
-                .eq('email', currentUser.email);
+                .ilike('email', currentUser.email);
 
             if (organizations.length === 0 && (!invitations || invitations.length === 0)) {
                 showScreen('setup');

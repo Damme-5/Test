@@ -158,7 +158,7 @@ CREATE POLICY "Admins can delete members" ON members
 CREATE POLICY "Users can view invitations for their orgs" ON invitations
     FOR SELECT USING (
         organization_id IN (SELECT organization_id FROM members WHERE user_id = auth.uid())
-        OR email = (SELECT email FROM auth.users WHERE id = auth.uid())
+        OR LOWER(email) = LOWER((SELECT email FROM auth.users WHERE id = auth.uid()))
     );
 
 CREATE POLICY "Admins can create invitations" ON invitations
