@@ -317,3 +317,37 @@ BEGIN
     DELETE FROM invitations WHERE id = invitation_id;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Function for admins to add members directly
+CREATE OR REPLACE FUNCTION admin_add_member(
+    p_organization_id UUID,
+    p_user_id UUID,
+    p_email TEXT,
+    p_display_name TEXT
+)
+RETURNS VOID AS $$
+BEGIN
+    -- Verify the calling user is admin in the organization
+    IF NOT EXISTS (
+        SELECT 1 FROM members
+        WHERE organization_id = p_organization_id
+        AND user_id = auth.uid()
+        AND role = 'admin'
+    ) THEN
+        RAISE EXCEPTION 'Only administrators can add members';
+    END IF;
+
+    -- Add user as member
+    INSERT INTO members (organization_id, user_id, email, role, display_name)
+    VALUES (p_organization_id, p_user_id, LOWER(p_email), 'member', p_display_name)
+    ON CONFLICT (organization_id, user_id) DO UPDATE
+    SET display_name = EXCLUDED.display_name;
+
+    -- Delete any pending invitations for this email
+    DELETE FROM invitations
+    WHERE organization_id = p_organization_id
+    AND LOWER(email) = LOWER(p_email);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+GRANT EXECUTE ON FUNCTION admin_add_member TO authenticated;

@@ -2938,8 +2938,8 @@
 
         async function sendInvitation(e) {
             e.preventDefault();
-            const name = document.getElementById('invite-name').value;
-            const email = document.getElementById('invite-email').value;
+            const name = document.getElementById('invite-name').value.trim();
+            const email = document.getElementById('invite-email').value.trim().toLowerCase();
             const password = document.getElementById('invite-password').value;
 
             if (password.length < 6) {
@@ -2948,27 +2948,41 @@
             }
 
             try {
-                const { data: { session } } = await supabaseClient.auth.getSession();
-
-                const response = await fetch(`${SUPABASE_URL}/functions/v1/create-member`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${session.access_token}`,
-                        'apikey': SUPABASE_ANON_KEY
-                    },
-                    body: JSON.stringify({
-                        email: email,
-                        password: password,
-                        display_name: name,
-                        organization_id: currentOrg.id
-                    })
+                // Step 1: Create user account via signUp
+                const { data: signUpData, error: signUpError } = await supabaseClient.auth.signUp({
+                    email: email,
+                    password: password,
+                    options: {
+                        data: {
+                            display_name: name
+                        }
+                    }
                 });
 
-                const result = await response.json();
+                if (signUpError) {
+                    // Check if user already exists
+                    if (signUpError.message.includes('already registered')) {
+                        throw new Error('En bruger med denne email findes allerede');
+                    }
+                    throw signUpError;
+                }
 
-                if (!result.success) {
-                    throw new Error(result.error || 'Kunne ikke oprette medlem');
+                if (!signUpData.user) {
+                    throw new Error('Kunne ikke oprette bruger');
+                }
+
+                // Step 2: Add user as member via database function
+                const { error: memberError } = await supabaseClient.rpc('admin_add_member', {
+                    p_organization_id: currentOrg.id,
+                    p_user_id: signUpData.user.id,
+                    p_email: email,
+                    p_display_name: name
+                });
+
+                if (memberError) {
+                    console.error('Error adding member:', memberError);
+                    // User was created but not added to org - they can still accept invitation later
+                    throw new Error('Bruger oprettet, men kunne ikke tilføjes til organisationen automatisk');
                 }
 
                 closeModal('invite-modal');
@@ -2976,10 +2990,10 @@
                 document.getElementById('invite-email').value = '';
                 document.getElementById('invite-password').value = '';
                 await loadMembers();
-                showToast(`${name} er nu tilføjet som medlem!`, 'success');
+                showToast(`${name} er nu tilføjet! De kan logge ind med den angivne adgangskode.`, 'success');
             } catch (error) {
                 console.error('Error creating member:', error);
-                showToast('Kunne ikke oprette medlem: ' + error.message, 'error');
+                showToast('Fejl: ' + error.message, 'error');
             }
         }
 
