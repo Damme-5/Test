@@ -2961,8 +2961,8 @@
 
                 if (signUpError) {
                     // Check if user already exists
-                    if (signUpError.message.includes('already registered')) {
-                        throw new Error('En bruger med denne email findes allerede');
+                    if (signUpError.message.includes('already registered') || signUpError.message.includes('Database error')) {
+                        throw new Error('En bruger med denne email findes allerede. Prøv en anden email.');
                     }
                     throw signUpError;
                 }
