@@ -2764,19 +2764,9 @@
                     // Log the actual error for debugging
                     console.error('Signup error details:', error.message, error);
 
-                    // Translate common error messages to Danish
-                    let errorMessage = error.message;
-                    if (error.message.includes('already registered') || error.message.includes('already been registered') || error.message.includes('already exists')) {
-                        errorMessage = 'Denne email er allerede registreret. Prøv at logge ind i stedet.';
-                    } else if (error.message.includes('Database error') || error.message.includes('duplicate key') || error.message.includes('unique constraint')) {
-                        // Database errors during signup are almost always due to duplicate email
-                        errorMessage = 'Denne email er allerede registreret. Prøv at logge ind i stedet.';
-                    } else if (error.message.includes('Password')) {
-                        errorMessage = 'Adgangskoden skal være mindst 6 tegn.';
-                    } else if (error.message.includes('Invalid email')) {
-                        errorMessage = 'Ugyldig email-adresse.';
-                    }
-                    showAuthError(errorMessage);
+                    // Show the raw error for debugging - temporarily!
+                    showAuthError('Fejl: ' + error.message + ' (Status: ' + (error.status || 'unknown') + ')');
+                    return;
                 } else if (data.user) {
                     // Check if email confirmation is required (identities empty = user already exists)
                     if (data.user.identities && data.user.identities.length === 0) {
