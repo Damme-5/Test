@@ -2764,8 +2764,13 @@
                     // Log the actual error for debugging
                     console.error('Signup error details:', error.message, error);
 
-                    // Show the raw error for debugging - temporarily!
-                    showAuthError('Fejl: ' + error.message + ' (Status: ' + (error.status || 'unknown') + ')');
+                    // Check if this is a duplicate email error (Supabase returns "Database error" for existing users)
+                    if (error.message.includes('Database error') || error.message.includes('already registered')) {
+                        showAuthError('Denne email er allerede registreret. Prøv at logge ind i stedet.');
+                    } else {
+                        // Show generic error for other issues
+                        showAuthError('Der opstod en fejl under oprettelsen. Prøv venligst igen.');
+                    }
                     return;
                 } else if (data.user) {
                     // Check if email confirmation is required (identities empty = user already exists)
