@@ -2761,12 +2761,12 @@
                 });
 
                 if (error) {
-                    // Log the actual error for debugging
-                    console.error('Signup error details:', error.message, error);
-
                     // Check if this is a duplicate email error (Supabase returns "Database error" for existing users)
                     if (error.message.includes('Database error') || error.message.includes('already registered')) {
-                        showAuthError('Denne email er allerede registreret. Prøv at logge ind i stedet.');
+                        // Auto-switch to login tab and pre-fill email
+                        showAuthTab('login');
+                        document.getElementById('login-email').value = email;
+                        showAuthError('Denne email er allerede registreret. Log ind med din adgangskode.');
                     } else {
                         // Show generic error for other issues
                         showAuthError('Der opstod en fejl under oprettelsen. Prøv venligst igen.');
@@ -2775,7 +2775,10 @@
                 } else if (data.user) {
                     // Check if email confirmation is required (identities empty = user already exists)
                     if (data.user.identities && data.user.identities.length === 0) {
-                        showAuthError('Denne email er allerede registreret. Prøv at logge ind i stedet.');
+                        // Auto-switch to login tab and pre-fill email
+                        showAuthTab('login');
+                        document.getElementById('login-email').value = email;
+                        showAuthError('Denne email er allerede registreret. Log ind med din adgangskode.');
                     } else {
                         currentUser = data.user;
                         await loadUserData();
