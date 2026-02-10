@@ -138,6 +138,15 @@ CREATE POLICY "Users can join via invitation" ON members
         )
     );
 
+-- Allow organization creator to be added as initial admin member
+CREATE POLICY "Creator becomes initial admin" ON members
+    FOR INSERT WITH CHECK (
+        user_id = auth.uid() AND
+        organization_id IN (
+            SELECT id FROM organizations WHERE created_by = auth.uid()
+        )
+    );
+
 CREATE POLICY "Admins can update members" ON members
     FOR UPDATE USING (
         organization_id IN (
