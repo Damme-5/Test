@@ -1,9 +1,13 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="da">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tic-Tac-Toe Game</title>
+    <title>Partner Hub - Opgavestyring</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://apis.google.com/js/api.js" async defer></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -11,291 +15,4386 @@
             box-sizing: border-box;
         }
 
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --primary-light: #818cf8;
+            --secondary: #14b8a6;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --success: #22c55e;
+            --bg-light: #f8fafc;
+            --bg-card: #ffffff;
+            --text-dark: #1e293b;
+            --text-medium: #475569;
+            --text-light: #94a3b8;
+            --border: #e2e8f0;
+            --shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+            --radius: 12px;
+            --radius-lg: 16px;
+        }
+
+        /* Dark Mode */
+        [data-theme="dark"] {
+            --primary: #818cf8;
+            --primary-dark: #6366f1;
+            --primary-light: #a5b4fc;
+            --bg-light: #0f172a;
+            --bg-card: #1e293b;
+            --text-dark: #f1f5f9;
+            --text-medium: #cbd5e1;
+            --text-light: #64748b;
+            --border: #334155;
+            --shadow: 0 1px 3px rgba(0,0,0,0.3);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.3);
+        }
+
         body {
-            font-family: 'Arial', sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg-light);
+            min-height: 100vh;
+            color: var(--text-dark);
+            transition: background 0.3s, color 0.3s;
+        }
+
+        /* Auth Container */
+        .auth-container {
+            min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            padding: 20px;
         }
 
-        .container {
-            text-align: center;
-            background: white;
+        .auth-box {
+            background: var(--bg-card);
             padding: 40px;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            width: 100%;
+            max-width: 420px;
         }
 
-        h1 {
-            color: #333;
-            margin-bottom: 20px;
-            font-size: 2.5em;
+        .auth-title {
+            text-align: center;
+            margin-bottom: 8px;
+            color: var(--text-dark);
+            font-size: 1.75em;
+            font-weight: 700;
         }
 
-        .game-info {
-            margin: 20px 0;
-            font-size: 1.3em;
-            color: #555;
-            min-height: 30px;
+        .auth-subtitle {
+            text-align: center;
+            color: var(--text-light);
+            margin-bottom: 30px;
         }
 
-        .current-player {
-            font-weight: bold;
-            color: #667eea;
+        .auth-tabs {
+            display: flex;
+            margin-bottom: 25px;
+            background: var(--bg-light);
+            border-radius: var(--radius);
+            padding: 4px;
         }
 
-        .board {
-            display: grid;
-            grid-template-columns: repeat(3, 120px);
-            grid-template-rows: repeat(3, 120px);
-            gap: 10px;
-            margin: 20px auto;
-            justify-content: center;
-        }
-
-        .cell {
-            background: #f0f0f0;
+        .auth-tab {
+            flex: 1;
+            padding: 12px;
             border: none;
-            font-size: 3em;
-            font-weight: bold;
+            background: transparent;
             cursor: pointer;
+            font-size: 0.95em;
+            font-weight: 500;
+            transition: all 0.3s;
+            border-radius: 8px;
+            color: var(--text-medium);
+        }
+
+        .auth-tab.active {
+            background: var(--bg-card);
+            color: var(--primary);
+            box-shadow: var(--shadow);
+        }
+
+        /* Navigation */
+        .navbar {
+            background: var(--bg-card);
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .logo {
+            color: var(--primary);
+            font-size: 1.4em;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2em;
+        }
+
+        .navbar-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .user-info {
+            color: var(--text-medium);
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+
+        .org-selector {
+            padding: 8px 16px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            font-size: 0.9em;
+            cursor: pointer;
+            background: var(--bg-card);
+            color: var(--text-dark);
+        }
+
+        .theme-toggle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+            background: var(--bg-light);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2em;
+            transition: all 0.3s;
+        }
+
+        .theme-toggle:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        /* Main Layout */
+        .app-container {
+            display: flex;
+            min-height: calc(100vh - 65px);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background: var(--bg-card);
+            padding: 20px 12px;
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .nav-section {
+            margin-bottom: 24px;
+        }
+
+        .nav-section-title {
+            font-size: 0.75em;
+            font-weight: 600;
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 0 12px;
+            margin-bottom: 8px;
+        }
+
+        .nav-item {
+            padding: 12px 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.2s;
+            border-radius: var(--radius);
+            margin-bottom: 4px;
+            color: var(--text-medium);
+            font-weight: 500;
+        }
+
+        .nav-item:hover {
+            background: var(--bg-light);
+            color: var(--text-dark);
+        }
+
+        .nav-item.active {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+        }
+
+        .nav-icon {
+            font-size: 1.2em;
+            width: 24px;
+            text-align: center;
+        }
+
+        .nav-badge {
+            margin-left: auto;
+            background: var(--danger);
+            color: white;
+            font-size: 0.7em;
+            padding: 2px 8px;
             border-radius: 10px;
-            transition: all 0.3s ease;
-            color: #333;
+            font-weight: 600;
         }
 
-        .cell:hover:not(.taken) {
-            background: #e0e0e0;
-            transform: scale(1.05);
+        /* Mobile Bottom Nav */
+        .mobile-nav {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--bg-card);
+            border-top: 1px solid var(--border);
+            padding: 8px 0;
+            z-index: 100;
         }
 
-        .cell.taken {
+        .mobile-nav-items {
+            display: flex;
+            justify-content: space-around;
+        }
+
+        .mobile-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 16px;
+            color: var(--text-light);
+            font-size: 0.75em;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .mobile-nav-item.active {
+            color: var(--primary);
+        }
+
+        .mobile-nav-item .nav-icon {
+            font-size: 1.5em;
+            margin-bottom: 4px;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 24px;
+            overflow-y: auto;
+            max-width: 1200px;
+        }
+
+        /* Page Header */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .page-title {
+            font-size: 1.75em;
+            font-weight: 700;
+            color: var(--text-dark);
+        }
+
+        .page-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        /* Search Bar */
+        .search-bar {
+            position: relative;
+            flex: 1;
+            max-width: 300px;
+        }
+
+        .search-bar input {
+            width: 100%;
+            padding: 10px 16px 10px 40px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            font-size: 0.9em;
+            background: var(--bg-card);
+            color: var(--text-dark);
+            transition: border-color 0.2s;
+        }
+
+        .search-bar input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .search-bar::before {
+            content: "🔍";
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1em;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: var(--radius);
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-secondary {
+            background: var(--secondary);
+            color: white;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 0.85em;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--border);
+            color: var(--text-medium);
+        }
+
+        .btn-outline:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-icon {
+            width: 36px;
+            height: 36px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
             cursor: not-allowed;
         }
 
-        .cell.x {
-            color: #667eea;
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
         }
 
-        .cell.o {
-            color: #f093fb;
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
         }
 
-        .cell.winning {
-            background: #ffd700;
-            animation: pulse 0.5s ease-in-out;
+        .card-title {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+        }
+
+        .stat-icon {
+            font-size: 2em;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: 700;
+            color: var(--text-dark);
+        }
+
+        .stat-label {
+            color: var(--text-light);
+            font-size: 0.9em;
+            margin-top: 4px;
+        }
+
+        /* Deadline Alert */
+        .deadline-alert {
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            border: 1px solid #f59e0b;
+            border-radius: var(--radius);
+            padding: 16px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        [data-theme="dark"] .deadline-alert {
+            background: linear-gradient(135deg, #78350f, #92400e);
+            border-color: #b45309;
+        }
+
+        .deadline-alert-icon {
+            font-size: 1.5em;
+        }
+
+        .deadline-alert-content h4 {
+            color: #92400e;
+            margin-bottom: 4px;
+        }
+
+        [data-theme="dark"] .deadline-alert-content h4 {
+            color: #fcd34d;
+        }
+
+        .deadline-alert-content p {
+            color: #b45309;
+            font-size: 0.9em;
+        }
+
+        [data-theme="dark"] .deadline-alert-content p {
+            color: #fbbf24;
+        }
+
+        /* Forms */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text-dark);
+            font-size: 0.9em;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            font-size: 1em;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            background: var(--bg-card);
+            color: var(--text-dark);
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        textarea.form-control {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            width: 100%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .modal-title {
+            font-size: 1.25em;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .modal-close {
+            background: var(--bg-light);
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            color: var(--text-light);
+            font-size: 1.2em;
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+            background: var(--danger);
+            color: white;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 20px;
+            background: var(--bg-light);
+            padding: 4px;
+            border-radius: var(--radius);
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            border-radius: 8px;
+            font-size: 0.9em;
+            font-weight: 500;
+            transition: all 0.2s;
+            color: var(--text-medium);
+        }
+
+        .tab:hover {
+            background: var(--bg-card);
+        }
+
+        .tab.active {
+            background: var(--bg-card);
+            color: var(--primary);
+            box-shadow: var(--shadow);
+        }
+
+        /* Filter Dropdown */
+        .filter-dropdown {
+            position: relative;
+        }
+
+        .filter-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--bg-card);
+            cursor: pointer;
+            font-size: 0.9em;
+            color: var(--text-medium);
+        }
+
+        .filter-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-lg);
+            min-width: 200px;
+            z-index: 50;
+            display: none;
+            margin-top: 4px;
+        }
+
+        .filter-menu.active {
+            display: block;
+        }
+
+        .filter-option {
+            padding: 10px 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.2s;
+        }
+
+        .filter-option:hover {
+            background: var(--bg-light);
+        }
+
+        .filter-option.selected {
+            color: var(--primary);
+            font-weight: 500;
+        }
+
+        /* List Items */
+        .list-item {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 16px 20px;
+            margin-bottom: 12px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--primary);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .list-item:hover {
+            transform: translateX(4px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+            gap: 12px;
+        }
+
+        .list-title {
+            font-weight: 600;
+            font-size: 1.05em;
+            color: var(--text-dark);
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75em;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .status-open { background: #dbeafe; color: #1d4ed8; }
+        .status-progress { background: #fef3c7; color: #b45309; }
+        .status-closed { background: #dcfce7; color: #15803d; }
+
+        [data-theme="dark"] .status-open { background: #1e3a5f; color: #60a5fa; }
+        [data-theme="dark"] .status-progress { background: #451a03; color: #fbbf24; }
+        [data-theme="dark"] .status-closed { background: #14532d; color: #4ade80; }
+
+        .list-meta {
+            display: flex;
+            gap: 16px;
+            color: var(--text-light);
+            font-size: 0.85em;
+            flex-wrap: wrap;
+        }
+
+        .list-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .list-description {
+            color: var(--text-medium);
+            margin: 8px 0;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+
+        .list-actions {
+            margin-top: 12px;
+            display: flex;
+            gap: 8px;
+        }
+
+        /* Tasks */
+        .task-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 16px;
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            margin-bottom: 8px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            transition: all 0.2s;
+        }
+
+        .task-item:hover {
+            box-shadow: var(--shadow-lg);
+        }
+
+        .task-item.completed {
+            opacity: 0.6;
+        }
+
+        .task-item.completed .task-text {
+            text-decoration: line-through;
+        }
+
+        .task-item.urgent {
+            border-left: 4px solid var(--danger);
+        }
+
+        .task-checkbox {
+            width: 24px;
+            height: 24px;
+            border: 2px solid var(--border);
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.2s;
+            margin-top: 2px;
+        }
+
+        .task-checkbox:hover {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .task-checkbox.checked {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        .task-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .task-text {
+            font-weight: 500;
+            color: var(--text-dark);
+            margin-bottom: 4px;
+        }
+
+        .task-meta {
+            font-size: 0.8em;
+            color: var(--text-light);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .period-badge {
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 500;
+        }
+
+        .period-daily { background: #dbeafe; color: #1d4ed8; }
+        .period-weekly { background: #f3e8ff; color: #7c3aed; }
+        .period-monthly { background: #fef3c7; color: #b45309; }
+
+        [data-theme="dark"] .period-daily { background: #1e3a5f; color: #60a5fa; }
+        [data-theme="dark"] .period-weekly { background: #2e1065; color: #c4b5fd; }
+        [data-theme="dark"] .period-monthly { background: #451a03; color: #fbbf24; }
+
+        /* Chat */
+        .chat-layout {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 20px;
+            height: calc(100vh - 200px);
+            min-height: 500px;
+        }
+
+        .chat-list {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid var(--border);
+        }
+
+        .chat-list-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+        }
+
+        .chat-list-items {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .chat-item {
+            padding: 16px 20px;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border);
+            transition: all 0.2s;
+        }
+
+        .chat-item:hover, .chat-item.active {
+            background: var(--bg-light);
+        }
+
+        .chat-item.active {
+            border-left: 3px solid var(--primary);
+        }
+
+        .chat-item-name {
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: var(--text-dark);
+        }
+
+        .chat-item-preview {
+            font-size: 0.85em;
+            color: var(--text-light);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .chat-window {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .chat-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .typing-indicator {
+            font-size: 0.8em;
+            color: var(--text-light);
+            font-weight: normal;
+            font-style: italic;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: var(--bg-light);
+        }
+
+        .message {
+            margin-bottom: 16px;
+            max-width: 75%;
+        }
+
+        .message.sent {
+            margin-left: auto;
+        }
+
+        .message-sender {
+            font-size: 0.75em;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: var(--text-light);
+        }
+
+        .message.sent .message-sender {
+            text-align: right;
+        }
+
+        .message-bubble {
+            padding: 12px 16px;
+            border-radius: 16px;
+            line-height: 1.4;
+            word-wrap: break-word;
+        }
+
+        .message.received .message-bubble {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-bottom-left-radius: 4px;
+        }
+
+        .message.sent .message-bubble {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message-time {
+            font-size: 0.7em;
+            color: var(--text-light);
+            margin-top: 4px;
+        }
+
+        .message.sent .message-time {
+            text-align: right;
+        }
+
+        .chat-input {
+            padding: 16px 20px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 12px;
+            background: var(--bg-card);
+        }
+
+        .chat-input input {
+            flex: 1;
+        }
+
+        .emoji-btn {
+            width: 40px;
+            height: 40px;
+            border: none;
+            background: var(--bg-light);
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2em;
+            transition: background 0.2s;
+        }
+
+        .emoji-btn:hover {
+            background: var(--border);
+        }
+
+        .emoji-picker {
+            position: absolute;
+            bottom: 70px;
+            right: 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 12px;
+            box-shadow: var(--shadow-lg);
+            display: none;
+            z-index: 50;
+        }
+
+        .emoji-picker.active {
+            display: block;
+        }
+
+        .emoji-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 4px;
+        }
+
+        .emoji-item {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 1.2em;
+        }
+
+        .emoji-item:hover {
+            background: var(--bg-light);
+        }
+
+        /* Members */
+        .member-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .member-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+
+        .member-info {
+            flex: 1;
+        }
+
+        .member-name {
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .member-email {
+            font-size: 0.85em;
+            color: var(--text-light);
+        }
+
+        .role-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75em;
+            font-weight: 600;
+        }
+
+        .role-admin { background: #fef3c7; color: #b45309; }
+        .role-member { background: #dbeafe; color: #1d4ed8; }
+
+        [data-theme="dark"] .role-admin { background: #451a03; color: #fbbf24; }
+        [data-theme="dark"] .role-member { background: #1e3a5f; color: #60a5fa; }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-light);
+        }
+
+        .empty-state-icon {
+            font-size: 4em;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .empty-state p {
+            font-size: 1.1em;
+        }
+
+        /* Loading */
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Alert */
+        .alert {
+            padding: 12px 16px;
+            border-radius: var(--radius);
+            margin-bottom: 16px;
+            font-size: 0.9em;
+        }
+
+        .alert-error {
+            background: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+        }
+
+        .alert-success {
+            background: #f0fdf4;
+            color: #16a34a;
+            border: 1px solid #bbf7d0;
+        }
+
+        [data-theme="dark"] .alert-error {
+            background: #450a0a;
+            border-color: #7f1d1d;
+        }
+
+        [data-theme="dark"] .alert-success {
+            background: #052e16;
+            border-color: #14532d;
+        }
+
+        /* Setup screen */
+        .setup-container {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            padding: 20px;
+        }
+
+        .setup-box {
+            background: var(--bg-card);
+            padding: 40px;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .setup-title {
+            text-align: center;
+            margin-bottom: 8px;
+            font-size: 1.75em;
+            font-weight: 700;
+        }
+
+        .setup-subtitle {
+            text-align: center;
+            color: var(--text-light);
+            margin-bottom: 30px;
+        }
+
+        .invitation-card {
+            background: var(--bg-light);
+            padding: 20px;
+            border-radius: var(--radius);
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+        }
+
+        .invitation-org {
+            font-weight: 600;
+            font-size: 1.1em;
+            margin-bottom: 4px;
+            color: var(--text-dark);
+        }
+
+        .invitation-from {
+            color: var(--text-light);
+            font-size: 0.9em;
+        }
+
+        /* Drive Section */
+        .drive-section {
+            margin-top: 24px;
+        }
+
+        .drive-connect-btn {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 24px;
+            background: var(--bg-light);
+            border: 2px dashed var(--border);
+            border-radius: var(--radius);
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.2s;
+        }
+
+        .drive-connect-btn:hover {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.05);
+        }
+
+        .drive-icon {
+            font-size: 2em;
+        }
+
+        .drive-files {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 12px;
+        }
+
+        .drive-file {
+            padding: 16px;
+            background: var(--bg-light);
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .drive-file:hover {
+            border-color: var(--primary);
+            box-shadow: var(--shadow);
+        }
+
+        .drive-file-icon {
+            font-size: 2em;
+            margin-bottom: 8px;
+        }
+
+        .drive-file-name {
+            font-weight: 500;
+            font-size: 0.9em;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Activity Feed */
+        .activity-feed {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .activity-item {
+            display: flex;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .activity-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--bg-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .activity-content {
+            flex: 1;
+        }
+
+        .activity-text {
+            font-size: 0.9em;
+            color: var(--text-dark);
+        }
+
+        .activity-time {
+            font-size: 0.8em;
+            color: var(--text-light);
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .chat-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .chat-list {
+                display: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                display: none;
+            }
+
+            .mobile-nav {
+                display: block;
+            }
+
+            .main-content {
+                padding: 16px;
+                padding-bottom: 80px;
+            }
+
+            .navbar {
+                padding: 12px 16px;
+            }
+
+            .navbar-right {
+                gap: 8px;
+            }
+
+            .user-info {
+                display: none;
+            }
+
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .page-actions {
+                width: 100%;
+            }
+
+            .search-bar {
+                max-width: none;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+        }
+
+        .toast {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 16px 20px;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 300px;
+            max-width: 400px;
+            animation: slideIn 0.3s ease, fadeOut 0.3s ease forwards;
+            animation-delay: 0s, var(--toast-duration, 3s);
+            pointer-events: auto;
+            border-left: 4px solid var(--primary);
+        }
+
+        .toast.success {
+            border-left-color: var(--success);
+        }
+
+        .toast.error {
+            border-left-color: var(--danger);
+        }
+
+        .toast.warning {
+            border-left-color: var(--warning);
+        }
+
+        .toast-icon {
+            font-size: 1.4em;
+            flex-shrink: 0;
+        }
+
+        .toast-content {
+            flex: 1;
+        }
+
+        .toast-title {
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 2px;
+        }
+
+        .toast-message {
+            font-size: 0.9em;
+            color: var(--text-medium);
+        }
+
+        .toast-close {
+            background: none;
+            border: none;
+            color: var(--text-light);
+            cursor: pointer;
+            padding: 4px;
+            font-size: 1.2em;
+            transition: color 0.2s;
+        }
+
+        .toast-close:hover {
+            color: var(--text-dark);
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+            }
+            to {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+        }
+
+        /* Custom Confirmation Dialog */
+        .confirm-dialog {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 300;
+        }
+
+        .confirm-dialog.active {
+            display: flex;
+        }
+
+        .confirm-box {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: 28px;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: var(--shadow-lg);
+            animation: popIn 0.2s ease;
+        }
+
+        @keyframes popIn {
+            from {
+                transform: scale(0.9);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .confirm-icon {
+            font-size: 3em;
+            margin-bottom: 16px;
+        }
+
+        .confirm-title {
+            font-size: 1.25em;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 8px;
+        }
+
+        .confirm-message {
+            color: var(--text-medium);
+            margin-bottom: 24px;
+            line-height: 1.5;
+        }
+
+        .confirm-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .confirm-actions .btn {
+            min-width: 100px;
+        }
+
+        /* Task completion animation */
+        .task-item.completing {
+            animation: taskComplete 0.4s ease forwards;
+        }
+
+        @keyframes taskComplete {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.02);
+                background: rgba(34, 197, 94, 0.1);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .task-checkbox.checking {
+            animation: checkPop 0.3s ease;
+        }
+
+        @keyframes checkPop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(1); }
+        }
+
+        /* Loading Skeleton */
+        .skeleton {
+            background: linear-gradient(90deg, var(--bg-light) 25%, var(--border) 50%, var(--bg-light) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: var(--radius);
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .skeleton-card {
+            height: 100px;
+            margin-bottom: 12px;
+        }
+
+        .skeleton-text {
+            height: 16px;
+            margin-bottom: 8px;
+            width: 80%;
+        }
+
+        .skeleton-text.short {
+            width: 40%;
+        }
+
+        /* Progress Ring */
+        .progress-ring {
+            position: relative;
+            width: 60px;
+            height: 60px;
+        }
+
+        .progress-ring svg {
+            transform: rotate(-90deg);
+        }
+
+        .progress-ring-circle {
+            fill: none;
+            stroke: var(--border);
+            stroke-width: 6;
+        }
+
+        .progress-ring-progress {
+            fill: none;
+            stroke: var(--primary);
+            stroke-width: 6;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 0.5s ease;
+        }
+
+        .progress-ring-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 0.9em;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        /* Improved Empty States */
+        .empty-state-enhanced {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-light);
+        }
+
+        .empty-state-enhanced .empty-icon {
+            font-size: 4em;
+            margin-bottom: 16px;
+            opacity: 0.5;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .empty-state-enhanced h3 {
+            color: var(--text-dark);
+            font-size: 1.2em;
+            margin-bottom: 8px;
+        }
+
+        .empty-state-enhanced p {
+            font-size: 0.95em;
+            margin-bottom: 20px;
+            max-width: 300px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Modal Tabs */
+        .modal-tabs {
+            display: flex;
+            gap: 0;
+            margin-bottom: 24px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .modal-tab {
+            padding: 12px 20px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: 500;
+            color: var(--text-medium);
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+            transition: all 0.2s;
+        }
+
+        .modal-tab:hover {
+            color: var(--text-dark);
+        }
+
+        .modal-tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .modal-tab-content {
+            display: none;
+        }
+
+        .modal-tab-content.active {
+            display: block;
+            animation: fadeIn 0.2s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Quick Stats Enhancement */
+        .stat-card-enhanced {
+            position: relative;
+        }
+
+        .stat-card-enhanced .stat-trend {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            font-size: 0.8em;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+
+        .stat-trend.up {
+            background: rgba(34, 197, 94, 0.1);
+            color: var(--success);
+        }
+
+        .stat-trend.down {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+        }
+
+        /* Overdue task indicator */
+        .overdue-badge {
+            background: var(--danger);
+            color: white;
+            font-size: 0.7em;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: 600;
+            animation: pulse 2s infinite;
         }
 
         @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
         }
 
-        .controls {
-            margin-top: 30px;
+        /* Responsive toast */
+        @media (max-width: 768px) {
+            .toast-container {
+                left: 16px;
+                right: 16px;
+                top: auto;
+                bottom: 90px;
+            }
+
+            .toast {
+                min-width: auto;
+                max-width: none;
+            }
         }
 
-        .reset-btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 15px 40px;
-            font-size: 1.1em;
-            border-radius: 50px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        /* Link buttons in modals */
+        a.btn {
+            text-decoration: none;
+            display: inline-flex;
         }
 
-        .reset-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 7px 20px rgba(102, 126, 234, 0.6);
+        /* Case detail modal enhancements */
+        #case-detail-content {
+            max-height: 60vh;
+            overflow-y: auto;
         }
 
-        .reset-btn:active {
-            transform: translateY(0);
+        #case-detail-content::-webkit-scrollbar {
+            width: 6px;
         }
 
-        .score-board {
-            display: flex;
-            justify-content: center;
-            gap: 30px;
-            margin: 20px 0;
-            font-size: 1.1em;
+        #case-detail-content::-webkit-scrollbar-track {
+            background: var(--bg-light);
+            border-radius: 3px;
         }
 
-        .score-item {
-            padding: 10px 20px;
-            background: #f8f9fa;
-            border-radius: 10px;
+        #case-detail-content::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
         }
 
-        .score-label {
-            color: #666;
-            font-weight: bold;
-        }
-
-        .score-value {
-            color: #667eea;
-            font-weight: bold;
-            font-size: 1.3em;
+        #case-detail-content::-webkit-scrollbar-thumb:hover {
+            background: var(--text-light);
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Tic-Tac-Toe</h1>
+    <!-- Auth Screen -->
+    <div id="auth-screen" class="auth-container">
+        <div class="auth-box">
+            <h1 class="auth-title">Partner Hub</h1>
+            <p class="auth-subtitle">Samarbejd om opgaver med din partner</p>
+            <div class="auth-tabs">
+                <button class="auth-tab active" onclick="showAuthTab('login')">Log ind</button>
+                <button class="auth-tab" onclick="showAuthTab('signup')">Opret konto</button>
+            </div>
 
-        <div class="score-board">
-            <div class="score-item">
-                <span class="score-label">X Wins: </span>
-                <span class="score-value" id="x-score">0</span>
+            <div id="auth-error" class="alert alert-error hidden"></div>
+
+            <form id="login-form" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="login-email" class="form-control" placeholder="din@email.dk" required>
+                </div>
+                <div class="form-group">
+                    <label>Adgangskode</label>
+                    <input type="password" id="login-password" class="form-control" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%">Log ind</button>
+                <div style="text-align: center; margin-top: 12px;">
+                    <a href="#" onclick="showForgotPassword(event)" style="color: var(--primary); font-size: 14px;">Glemt adgangskode?</a>
+                </div>
+            </form>
+
+            <form id="forgot-password-form" class="hidden" onsubmit="handleForgotPassword(event)">
+                <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 16px;">
+                    Indtast din email, så sender vi et link til at nulstille din adgangskode.
+                </p>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="forgot-email" class="form-control" placeholder="din@email.dk" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%">Send nulstillingslink</button>
+                <div style="text-align: center; margin-top: 12px;">
+                    <a href="#" onclick="showAuthTab('login')" style="color: var(--primary); font-size: 14px;">Tilbage til login</a>
+                </div>
+            </form>
+
+            <form id="signup-form" class="hidden" onsubmit="handleSignup(event)">
+                <div class="form-group">
+                    <label>Navn</label>
+                    <input type="text" id="signup-name" class="form-control" placeholder="Dit navn" required>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="signup-email" class="form-control" placeholder="din@email.dk" required>
+                </div>
+                <div class="form-group">
+                    <label>Adgangskode</label>
+                    <input type="password" id="signup-password" class="form-control" placeholder="Min. 6 tegn" minlength="6" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%">Opret konto</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Setup Screen -->
+    <div id="setup-screen" class="setup-container hidden">
+        <div class="setup-box">
+            <h1 class="setup-title">Velkommen!</h1>
+            <p class="setup-subtitle">Opret en organisation eller acceptér en invitation</p>
+
+            <div id="pending-invitations"></div>
+
+            <div class="card">
+                <h3 style="margin-bottom: 20px;">Opret ny organisation</h3>
+                <form onsubmit="createOrganization(event)">
+                    <div class="form-group">
+                        <label>Organisationsnavn</label>
+                        <input type="text" id="org-name" class="form-control" placeholder="F.eks. Familie Hansen" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width:100%">Opret organisation</button>
+                </form>
             </div>
-            <div class="score-item">
-                <span class="score-label">O Wins: </span>
-                <span class="score-value" id="o-score">0</span>
+
+            <button class="btn btn-outline" style="width:100%; margin-top: 10px;" onclick="handleLogout()">Log ud</button>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="app-screen" class="hidden">
+        <nav class="navbar">
+            <div class="logo">
+                <div class="logo-icon">📋</div>
+                <span>Partner Hub</span>
             </div>
-            <div class="score-item">
-                <span class="score-label">Draws: </span>
-                <span class="score-value" id="draw-score">0</span>
+            <div class="navbar-right">
+                <select id="org-selector" class="org-selector" onchange="switchOrganization()"></select>
+                <span class="user-info" id="user-display"></span>
+                <button class="theme-toggle" onclick="toggleTheme()" title="Skift tema">🌙</button>
+                <button class="btn btn-small btn-outline" onclick="handleLogout()">Log ud</button>
             </div>
+        </nav>
+
+        <div class="app-container">
+            <aside class="sidebar">
+                <div class="nav-section">
+                    <div class="nav-section-title">Menu</div>
+                    <div class="nav-item active" data-page="dashboard" onclick="showPage('dashboard')">
+                        <span class="nav-icon">📊</span>
+                        <span>Dashboard</span>
+                    </div>
+                    <div class="nav-item" data-page="cases" onclick="showPage('cases')">
+                        <span class="nav-icon">📁</span>
+                        <span>Sager</span>
+                    </div>
+                    <div class="nav-item" data-page="tasks" onclick="showPage('tasks')">
+                        <span class="nav-icon">✅</span>
+                        <span>Opgaver</span>
+                        <span class="nav-badge" id="task-badge" style="display:none;">0</span>
+                    </div>
+                    <div class="nav-item" data-page="chat" onclick="showPage('chat')">
+                        <span class="nav-icon">💬</span>
+                        <span>Chat</span>
+                    </div>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-section-title">Administration</div>
+                    <div class="nav-item" data-page="members" onclick="showPage('members')">
+                        <span class="nav-icon">👥</span>
+                        <span>Medlemmer</span>
+                    </div>
+                    <div class="nav-item" data-page="drive" onclick="showPage('drive')">
+                        <span class="nav-icon">📂</span>
+                        <span>Filer</span>
+                    </div>
+                </div>
+            </aside>
+
+            <main class="main-content">
+                <!-- Dashboard -->
+                <div id="page-dashboard" class="page">
+                    <div class="page-header">
+                        <h1 class="page-title">Dashboard</h1>
+                    </div>
+
+                    <div id="deadline-alerts"></div>
+
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon">📁</div>
+                            <div class="stat-value" id="stat-cases">0</div>
+                            <div class="stat-label">Aktive sager</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">✅</div>
+                            <div class="stat-value" id="stat-tasks">0</div>
+                            <div class="stat-label">Åbne opgaver</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">👥</div>
+                            <div class="stat-value" id="stat-members">0</div>
+                            <div class="stat-label">Medlemmer</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">🎯</div>
+                            <div class="stat-value" id="stat-completed">0</div>
+                            <div class="stat-label">Fuldført i dag</div>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div class="card">
+                            <div class="card-header">
+                                <span class="card-title">Mine opgaver</span>
+                                <button class="btn btn-small btn-outline" onclick="showPage('tasks')">Se alle</button>
+                            </div>
+                            <div id="dashboard-tasks"></div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header">
+                                <span class="card-title">Dagens fremgang</span>
+                            </div>
+                            <div id="dashboard-progress" style="display: flex; align-items: center; gap: 20px; padding: 20px;">
+                                <div id="progress-ring-container"></div>
+                                <div>
+                                    <div style="font-size: 1.1em; font-weight: 600; color: var(--text-dark); margin-bottom: 4px;">Opgaver fuldført</div>
+                                    <div style="color: var(--text-light);" id="progress-text">0 af 0 opgaver i dag</div>
+                                </div>
+                            </div>
+                            <div class="card-header" style="border-top: 1px solid var(--border); margin-top: 0;">
+                                <span class="card-title">Seneste aktivitet</span>
+                            </div>
+                            <div class="activity-feed" id="activity-feed"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cases -->
+                <div id="page-cases" class="page hidden">
+                    <div class="page-header">
+                        <h1 class="page-title">Sager</h1>
+                        <div class="page-actions">
+                            <div class="search-bar">
+                                <input type="text" id="case-search" placeholder="Søg i sager..." oninput="searchCases(this.value)">
+                            </div>
+                            <button class="btn btn-primary" onclick="openModal('case-modal')">+ Ny sag</button>
+                        </div>
+                    </div>
+                    <div class="tabs">
+                        <button class="tab active" onclick="filterCases('all')">Alle</button>
+                        <button class="tab" onclick="filterCases('open')">Aktive</button>
+                        <button class="tab" onclick="filterCases('progress')">I gang</button>
+                        <button class="tab" onclick="filterCases('closed')">Afsluttet</button>
+                    </div>
+                    <div id="cases-list"></div>
+                </div>
+
+                <!-- Tasks -->
+                <div id="page-tasks" class="page hidden">
+                    <div class="page-header">
+                        <h1 class="page-title">Opgaver</h1>
+                        <div class="page-actions">
+                            <div class="filter-dropdown">
+                                <button class="filter-btn" onclick="toggleFilterMenu()">
+                                    <span>👤</span>
+                                    <span id="filter-label">Alle personer</span>
+                                    <span>▼</span>
+                                </button>
+                                <div class="filter-menu" id="filter-menu">
+                                    <div class="filter-option selected" onclick="filterByPerson('')">Alle personer</div>
+                                    <div id="person-filter-options"></div>
+                                </div>
+                            </div>
+                            <button class="btn btn-primary" onclick="openModal('task-modal')">+ Ny opgave</button>
+                        </div>
+                    </div>
+                    <div class="tabs">
+                        <button class="tab active" onclick="filterTasks('all')">Alle</button>
+                        <button class="tab" onclick="filterTasks('daily')">Daglige</button>
+                        <button class="tab" onclick="filterTasks('weekly')">Ugentlige</button>
+                        <button class="tab" onclick="filterTasks('monthly')">Månedlige</button>
+                    </div>
+                    <div id="tasks-list"></div>
+                </div>
+
+                <!-- Chat -->
+                <div id="page-chat" class="page hidden">
+                    <div class="page-header">
+                        <h1 class="page-title">Chat</h1>
+                    </div>
+                    <div class="chat-layout">
+                        <div class="chat-list">
+                            <div class="chat-list-header">
+                                <span>Samtaler</span>
+                                <button class="btn btn-small btn-primary" onclick="openModal('chat-modal')">+</button>
+                            </div>
+                            <div class="chat-list-items" id="chat-list"></div>
+                        </div>
+                        <div class="chat-window">
+                            <div class="chat-header">
+                                <span id="chat-header">Vælg en samtale</span>
+                                <span class="typing-indicator" id="typing-indicator" style="display:none;">Skriver...</span>
+                            </div>
+                            <div class="chat-messages" id="chat-messages">
+                                <div class="empty-state">
+                                    <div class="empty-state-icon">💬</div>
+                                    <p>Vælg en samtale for at se beskeder</p>
+                                </div>
+                            </div>
+                            <div class="chat-input hidden" id="chat-input-area" style="position: relative;">
+                                <button class="emoji-btn" onclick="toggleEmojiPicker()">😊</button>
+                                <input type="text" id="message-input" class="form-control" placeholder="Skriv en besked..." onkeypress="handleMessageKeypress(event)" oninput="handleTyping()">
+                                <button class="btn btn-primary" onclick="sendMessage()">Send</button>
+                                <div class="emoji-picker" id="emoji-picker">
+                                    <div class="emoji-grid" id="emoji-grid"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Members -->
+                <div id="page-members" class="page hidden">
+                    <div class="page-header">
+                        <h1 class="page-title">Medlemmer</h1>
+                        <button class="btn btn-primary" id="invite-btn" onclick="openModal('invite-modal')">+ Tilføj medlem</button>
+                    </div>
+                    <div class="card">
+                        <div id="members-list"></div>
+                    </div>
+                    <div class="card" id="invitations-card">
+                        <div class="card-header">
+                            <span class="card-title">Afventende invitationer</span>
+                        </div>
+                        <div id="invitations-list"></div>
+                    </div>
+                </div>
+
+                <!-- Drive/Files -->
+                <div id="page-drive" class="page hidden">
+                    <div class="page-header">
+                        <h1 class="page-title">Delte filer</h1>
+                    </div>
+
+                    <!-- Google Drive Section -->
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-title">📁 Min Google Drive</span>
+                            <div id="drive-status"></div>
+                        </div>
+                        <div id="drive-content">
+                            <div id="drive-not-connected">
+                                <button class="drive-connect-btn" onclick="connectGoogleDrive()">
+                                    <span class="drive-icon">
+                                        <svg width="40" height="40" viewBox="0 0 87.3 78" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/>
+                                            <path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0 -1.2 4.5h27.5z" fill="#00ac47"/>
+                                            <path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z" fill="#ea4335"/>
+                                            <path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d"/>
+                                            <path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc"/>
+                                            <path d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 28h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/>
+                                        </svg>
+                                    </span>
+                                    <div>
+                                        <strong>Forbind Google Drive</strong>
+                                        <p style="font-size: 0.85em; color: var(--text-light); margin-top: 4px;">Log ind med Google for at dele filer med din partner</p>
+                                    </div>
+                                </button>
+                            </div>
+                            <div id="drive-connected" class="hidden">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                                    <div style="display: flex; align-items: center; gap: 12px;">
+                                        <img id="drive-user-photo" src="" alt="" style="width: 40px; height: 40px; border-radius: 50%;">
+                                        <div>
+                                            <div id="drive-user-name" style="font-weight: 600;"></div>
+                                            <div id="drive-user-email" style="font-size: 0.85em; color: var(--text-light);"></div>
+                                        </div>
+                                    </div>
+                                    <button class="btn btn-small btn-outline" onclick="disconnectGoogleDrive()">Afbryd forbindelse</button>
+                                </div>
+                                <div id="drive-files-loading" class="hidden" style="text-align: center; padding: 20px;">
+                                    <div class="spinner"></div>
+                                    <p style="margin-top: 10px; color: var(--text-light);">Henter filer...</p>
+                                </div>
+                                <div id="drive-files" class="drive-files"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Partner's Shared Files -->
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-title">👥 Delte filer fra teamet</span>
+                            <button class="btn btn-small btn-primary" onclick="shareCurrentDriveFile()" id="share-drive-btn" style="display: none;">Del valgt fil</button>
+                        </div>
+                        <div id="team-shared-files">
+                            <p style="color: var(--text-light); text-align: center; padding: 20px;">Ingen delte filer endnu</p>
+                        </div>
+                    </div>
+
+                    <!-- Manual Links -->
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-title">🔗 Delte links</span>
+                            <button class="btn btn-small btn-primary" onclick="openModal('link-modal')">+ Tilføj link</button>
+                        </div>
+                        <div id="shared-links"></div>
+                    </div>
+                </div>
+            </main>
         </div>
 
-        <div class="game-info">
-            <span class="current-player">Player X's Turn</span>
-        </div>
+        <!-- Mobile Nav -->
+        <nav class="mobile-nav">
+            <div class="mobile-nav-items">
+                <div class="mobile-nav-item active" data-page="dashboard" onclick="showPage('dashboard')">
+                    <span class="nav-icon">📊</span>
+                    <span>Hjem</span>
+                </div>
+                <div class="mobile-nav-item" data-page="cases" onclick="showPage('cases')">
+                    <span class="nav-icon">📁</span>
+                    <span>Sager</span>
+                </div>
+                <div class="mobile-nav-item" data-page="tasks" onclick="showPage('tasks')">
+                    <span class="nav-icon">✅</span>
+                    <span>Opgaver</span>
+                </div>
+                <div class="mobile-nav-item" data-page="chat" onclick="showPage('chat')">
+                    <span class="nav-icon">💬</span>
+                    <span>Chat</span>
+                </div>
+                <div class="mobile-nav-item" data-page="members" onclick="showPage('members')">
+                    <span class="nav-icon">👥</span>
+                    <span>Team</span>
+                </div>
+            </div>
+        </nav>
+    </div>
 
-        <div class="board" id="board">
-            <button class="cell" data-index="0"></button>
-            <button class="cell" data-index="1"></button>
-            <button class="cell" data-index="2"></button>
-            <button class="cell" data-index="3"></button>
-            <button class="cell" data-index="4"></button>
-            <button class="cell" data-index="5"></button>
-            <button class="cell" data-index="6"></button>
-            <button class="cell" data-index="7"></button>
-            <button class="cell" data-index="8"></button>
-        </div>
+    <!-- Modals -->
+    <!-- Case Modal -->
+    <div class="modal-overlay" id="case-modal">
+        <div class="modal" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2 class="modal-title" id="case-modal-title">Ny sag</h2>
+                <button class="modal-close" onclick="closeModal('case-modal')">&times;</button>
+            </div>
 
-        <div class="controls">
-            <button class="reset-btn" onclick="resetGame()">New Game</button>
+            <!-- Modal Tabs -->
+            <div class="modal-tabs">
+                <button type="button" class="modal-tab active" data-tab="basic" onclick="switchCaseTab('basic')">📋 Grundlæggende</button>
+                <button type="button" class="modal-tab" data-tab="details" onclick="switchCaseTab('details')">💼 Detaljer</button>
+                <button type="button" class="modal-tab" data-tab="contact" onclick="switchCaseTab('contact')">📇 Kontakt</button>
+            </div>
+
+            <form onsubmit="saveCase(event)">
+                <input type="hidden" id="case-id">
+
+                <!-- Tab: Basic Info -->
+                <div class="modal-tab-content active" id="case-tab-basic">
+                    <div class="form-group">
+                        <label>Titel *</label>
+                        <input type="text" id="case-title" class="form-control" placeholder="F.eks. Glostrup Øjenlæge" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Kategori</label>
+                        <select id="case-category" class="form-control">
+                            <option value="">Vælg kategori...</option>
+                            <option value="health">🏥 Sundhed</option>
+                            <option value="finance">💰 Økonomi</option>
+                            <option value="housing">🏠 Bolig</option>
+                            <option value="insurance">🛡️ Forsikring</option>
+                            <option value="subscription">📱 Abonnement</option>
+                            <option value="car">🚗 Bil</option>
+                            <option value="family">👨‍👩‍👧‍👦 Familie</option>
+                            <option value="work">💼 Arbejde</option>
+                            <option value="education">📚 Uddannelse</option>
+                            <option value="legal">⚖️ Juridisk</option>
+                            <option value="other">📋 Andet</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Beskrivelse</label>
+                        <textarea id="case-description" class="form-control" placeholder="Beskriv sagen..."></textarea>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        <div class="form-group">
+                            <label>Status</label>
+                            <select id="case-status" class="form-control">
+                                <option value="open">🟢 Aktiv</option>
+                                <option value="progress">🟡 I gang</option>
+                                <option value="pending">🟠 Afventer</option>
+                                <option value="closed">⚫ Afsluttet</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Prioritet</label>
+                            <select id="case-priority" class="form-control">
+                                <option value="low">🔵 Lav</option>
+                                <option value="medium" selected>🟢 Normal</option>
+                                <option value="high">🔴 Høj</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>👤 Tildelt til</label>
+                        <select id="case-assigned" class="form-control"></select>
+                    </div>
+                </div>
+
+                <!-- Tab: Details -->
+                <div class="modal-tab-content" id="case-tab-details">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        <div class="form-group">
+                            <label>💰 Månedlig pris (kr)</label>
+                            <input type="number" id="case-monthly-price" class="form-control" placeholder="0" min="0" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label>💳 Betalingsfrekvens</label>
+                            <select id="case-payment-frequency" class="form-control">
+                                <option value="">Ikke relevant</option>
+                                <option value="monthly">Månedlig</option>
+                                <option value="quarterly">Kvartalsvis</option>
+                                <option value="yearly">Årlig</option>
+                                <option value="once">Engangsbetaling</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        <div class="form-group">
+                            <label>📅 Start dato</label>
+                            <input type="date" id="case-start-date" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label>📅 Slut dato / Fornyelse</label>
+                            <input type="date" id="case-end-date" class="form-control">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>🔗 Website / Link</label>
+                        <input type="url" id="case-website" class="form-control" placeholder="https://...">
+                    </div>
+                    <div class="form-group">
+                        <label>📝 Interne noter</label>
+                        <textarea id="case-notes" class="form-control" placeholder="Private noter om sagen..." style="min-height: 100px;"></textarea>
+                    </div>
+                </div>
+
+                <!-- Tab: Contact -->
+                <div class="modal-tab-content" id="case-tab-contact">
+                    <div class="form-group">
+                        <label>Kontaktperson</label>
+                        <input type="text" id="case-contact-name" class="form-control" placeholder="Navn på kontaktperson">
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        <div class="form-group">
+                            <label>📞 Telefon</label>
+                            <input type="tel" id="case-contact-phone" class="form-control" placeholder="+45 12 34 56 78">
+                        </div>
+                        <div class="form-group">
+                            <label>📧 Email</label>
+                            <input type="email" id="case-contact-email" class="form-control" placeholder="email@example.dk">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>📍 Adresse</label>
+                        <input type="text" id="case-address" class="form-control" placeholder="Gade, postnummer, by">
+                    </div>
+                    <p style="color: var(--text-light); font-size: 0.85em; margin-top: 16px; padding: 12px; background: var(--bg-light); border-radius: var(--radius);">
+                        💡 Tip: Udfyld kontaktoplysninger for hurtig adgang til opkald og email direkte fra sagslisten.
+                    </p>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width:100%; margin-top: 20px;">Gem sag</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Task Modal -->
+    <div class="modal-overlay" id="task-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title">Ny opgave</h2>
+                <button class="modal-close" onclick="closeModal('task-modal')">&times;</button>
+            </div>
+            <form onsubmit="saveTask(event)">
+                <input type="hidden" id="task-id">
+                <div class="form-group">
+                    <label>Opgave *</label>
+                    <input type="text" id="task-title" class="form-control" placeholder="Hvad skal gøres?" required>
+                </div>
+                <div class="form-group">
+                    <label>Beskrivelse</label>
+                    <textarea id="task-description" class="form-control" placeholder="Yderligere detaljer..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Periode</label>
+                    <select id="task-period" class="form-control">
+                        <option value="daily">Daglig</option>
+                        <option value="weekly">Ugentlig</option>
+                        <option value="monthly">Månedlig</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Deadline</label>
+                    <input type="date" id="task-deadline" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>Tildelt til</label>
+                    <select id="task-assigned" class="form-control"></select>
+                </div>
+                <div class="form-group">
+                    <label>Tilknyttet sag</label>
+                    <select id="task-case" class="form-control"></select>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%">Gem opgave</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Chat Modal -->
+    <div class="modal-overlay" id="chat-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title">Ny samtale</h2>
+                <button class="modal-close" onclick="closeModal('chat-modal')">&times;</button>
+            </div>
+            <form onsubmit="createChat(event)">
+                <div class="form-group">
+                    <label>Navn på samtale *</label>
+                    <input type="text" id="chat-name" class="form-control" placeholder="F.eks. Generelt, Indkøb..." required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%">Opret samtale</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Invite Modal -->
+    <div class="modal-overlay" id="invite-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title">Opret nyt medlem</h2>
+                <button class="modal-close" onclick="closeModal('invite-modal')">&times;</button>
+            </div>
+            <form onsubmit="sendInvitation(event)">
+                <div class="form-group">
+                    <label>Navn *</label>
+                    <input type="text" id="invite-name" class="form-control" placeholder="Fulde navn" required>
+                </div>
+                <div class="form-group">
+                    <label>Email *</label>
+                    <input type="email" id="invite-email" class="form-control" placeholder="partner@email.dk" required>
+                </div>
+                <div class="form-group">
+                    <label>Adgangskode *</label>
+                    <input type="password" id="invite-password" class="form-control" placeholder="Mindst 6 tegn" required minlength="6">
+                </div>
+                <p style="color: var(--text-light); font-size: 0.9em; margin-bottom: 20px;">
+                    Kontoen oprettes med det samme, og brugeren kan logge ind med ovenstående oplysninger.
+                </p>
+                <button type="submit" class="btn btn-primary" style="width:100%">Opret medlem</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Link Modal -->
+    <div class="modal-overlay" id="link-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title">Tilføj delt link</h2>
+                <button class="modal-close" onclick="closeModal('link-modal')">&times;</button>
+            </div>
+            <form onsubmit="saveSharedLink(event)">
+                <div class="form-group">
+                    <label>Titel *</label>
+                    <input type="text" id="link-title" class="form-control" placeholder="F.eks. Budget regneark" required>
+                </div>
+                <div class="form-group">
+                    <label>URL *</label>
+                    <input type="url" id="link-url" class="form-control" placeholder="https://..." required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%">Gem link</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- Confirmation Dialog -->
+    <div class="confirm-dialog" id="confirm-dialog">
+        <div class="confirm-box">
+            <div class="confirm-icon" id="confirm-icon">⚠️</div>
+            <h3 class="confirm-title" id="confirm-title">Er du sikker?</h3>
+            <p class="confirm-message" id="confirm-message">Denne handling kan ikke fortrydes.</p>
+            <div class="confirm-actions">
+                <button class="btn btn-outline" onclick="closeConfirmDialog(false)">Annullér</button>
+                <button class="btn btn-danger" id="confirm-btn" onclick="closeConfirmDialog(true)">Bekræft</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Case Detail Modal -->
+    <div class="modal-overlay" id="case-detail-modal">
+        <div class="modal" style="max-width: 550px;">
+            <div class="modal-header">
+                <h2 class="modal-title" id="case-detail-title">Sagsdetaljer</h2>
+                <button class="modal-close" onclick="closeModal('case-detail-modal')">&times;</button>
+            </div>
+            <div id="case-detail-content"></div>
+            <div style="display: flex; gap: 12px; margin-top: 20px;">
+                <button class="btn btn-primary" style="flex: 1;" id="case-detail-edit-btn">Rediger</button>
+                <button class="btn btn-outline" style="flex: 1;" onclick="closeModal('case-detail-modal')">Luk</button>
+            </div>
         </div>
     </div>
 
     <script>
-        let currentPlayer = 'X';
-        let gameBoard = ['', '', '', '', '', '', '', '', ''];
-        let gameActive = true;
-        let scores = {
-            x: 0,
-            o: 0,
-            draws: 0
-        };
+        // Supabase Configuration
+        const SUPABASE_URL = 'https://vzswzajnmubaqghsgqri.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ6c3d6YWpubXViYXFnaHNncXJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3Nzg1NDMsImV4cCI6MjA4MzM1NDU0M30.j0DkBY_7TJnqLYAWpN5gDbHx8wwjogpYR9N7-QW8ZLo';
 
-        const winningConditions = [
-            [0, 1, 2],
-            [3, 4, 5],
-            [6, 7, 8],
-            [0, 3, 6],
-            [1, 4, 7],
-            [2, 5, 8],
-            [0, 4, 8],
-            [2, 4, 6]
-        ];
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        const cells = document.querySelectorAll('.cell');
-        const gameInfo = document.querySelector('.game-info');
+        // Google Drive Configuration
+        const GOOGLE_CLIENT_ID = '1031250977222-elk20ugdf43thgquh0vaautjbppvkhrc.apps.googleusercontent.com';
+        const GOOGLE_API_KEY = ''; // Not needed for OAuth-only access
+        const GOOGLE_SCOPES = 'https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email';
 
-        cells.forEach(cell => {
-            cell.addEventListener('click', handleCellClick);
+        // Common Emojis
+        const emojis = ['😊', '😂', '❤️', '👍', '👎', '🎉', '🔥', '💪', '✨', '🙏', '😍', '🤔', '😢', '😡', '🥳', '💯', '👏', '🙌', '💕', '✅', '❌', '⭐', '📌', '🎯', '💡', '📝', '📞', '💬', '🏠', '🚗', '🛒', '💰'];
+
+        // App State
+        let currentUser = null;
+        let currentOrg = null;
+        let organizations = [];
+        let members = [];
+        let cases = [];
+        let tasks = [];
+        let chats = [];
+        let sharedLinks = [];
+        let teamSharedFiles = [];
+        let activeChat = null;
+        let currentCaseFilter = 'all';
+        let currentTaskFilter = 'all';
+        let currentPersonFilter = '';
+        let caseSearchQuery = '';
+        let messageSubscription = null;
+        let typingTimeout = null;
+
+        // Google Drive State
+        let googleTokenClient = null;
+        let googleAccessToken = null;
+        let googleUser = null;
+        let driveFiles = [];
+
+        // Theme
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            document.querySelector('.theme-toggle').textContent = newTheme === 'dark' ? '☀️' : '🌙';
+        }
+
+        // Load saved theme
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        if (savedTheme === 'dark') {
+            document.querySelector('.theme-toggle').textContent = '☀️';
+        }
+
+        // ==================== AUTH ====================
+        async function checkAuth() {
+            // Listen for auth state changes (including password recovery)
+            supabaseClient.auth.onAuthStateChange(async (event, session) => {
+                if (event === 'PASSWORD_RECOVERY') {
+                    // User clicked password reset link - show password update form
+                    showPasswordUpdateModal();
+                } else if (event === 'SIGNED_IN' && session) {
+                    currentUser = session.user;
+                    await loadUserData();
+                }
+            });
+
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (session) {
+                currentUser = session.user;
+                await loadUserData();
+            } else {
+                showScreen('auth');
+            }
+        }
+
+        function showPasswordUpdateModal() {
+            const modal = document.createElement('div');
+            modal.className = 'modal-backdrop';
+            modal.id = 'password-update-modal';
+            modal.innerHTML = `
+                <div class="modal" style="max-width: 400px;">
+                    <div class="modal-header">
+                        <h3>Opdater adgangskode</h3>
+                    </div>
+                    <form onsubmit="handlePasswordUpdate(event)">
+                        <div class="form-group">
+                            <label>Ny adgangskode</label>
+                            <input type="password" id="new-password" class="form-control" placeholder="Mindst 6 tegn" required minlength="6">
+                        </div>
+                        <div class="form-group">
+                            <label>Bekræft adgangskode</label>
+                            <input type="password" id="confirm-password" class="form-control" placeholder="Gentag adgangskode" required minlength="6">
+                        </div>
+                        <div id="password-update-error" class="error-message hidden"></div>
+                        <button type="submit" class="btn btn-primary" style="width: 100%;">Opdater adgangskode</button>
+                    </form>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            setTimeout(() => modal.classList.add('show'), 10);
+        }
+
+        async function handlePasswordUpdate(e) {
+            e.preventDefault();
+            const newPassword = document.getElementById('new-password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+            const errorEl = document.getElementById('password-update-error');
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+
+            if (newPassword !== confirmPassword) {
+                errorEl.textContent = 'Adgangskoderne matcher ikke.';
+                errorEl.classList.remove('hidden');
+                return;
+            }
+
+            try {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Opdaterer...';
+
+                const { error } = await supabaseClient.auth.updateUser({ password: newPassword });
+
+                if (error) {
+                    errorEl.textContent = 'Kunne ikke opdatere adgangskode. Prøv igen.';
+                    errorEl.classList.remove('hidden');
+                } else {
+                    const modal = document.getElementById('password-update-modal');
+                    if (modal) modal.remove();
+                    showToast('Adgangskode opdateret!', 'success');
+                    await loadUserData();
+                }
+            } catch (err) {
+                errorEl.textContent = 'Der opstod en fejl. Prøv igen.';
+                errorEl.classList.remove('hidden');
+                console.error('Password update error:', err);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Opdater adgangskode';
+            }
+        }
+
+        function showAuthTab(tab) {
+            document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+            document.querySelector(`.auth-tab:${tab === 'login' ? 'first' : 'last'}-child`).classList.add('active');
+            document.getElementById('login-form').classList.toggle('hidden', tab !== 'login');
+            document.getElementById('signup-form').classList.toggle('hidden', tab !== 'signup');
+            document.getElementById('forgot-password-form').classList.add('hidden');
+            document.getElementById('auth-error').classList.add('hidden');
+        }
+
+        function showForgotPassword(e) {
+            e.preventDefault();
+            document.getElementById('login-form').classList.add('hidden');
+            document.getElementById('signup-form').classList.add('hidden');
+            document.getElementById('forgot-password-form').classList.remove('hidden');
+            document.getElementById('auth-error').classList.add('hidden');
+            // Pre-fill email if already entered in login form
+            const loginEmail = document.getElementById('login-email').value;
+            if (loginEmail) {
+                document.getElementById('forgot-email').value = loginEmail;
+            }
+        }
+
+        async function handleForgotPassword(e) {
+            e.preventDefault();
+            const email = document.getElementById('forgot-email').value;
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+
+            try {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Sender...';
+
+                const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+                    redirectTo: window.location.origin + window.location.pathname
+                });
+
+                if (error) {
+                    showAuthError('Kunne ikke sende nulstillingslink. Prøv igen.');
+                } else {
+                    showAuthError(''); // Clear any errors
+                    document.getElementById('auth-error').classList.add('hidden');
+                    showToast('Nulstillingslink sendt! Tjek din email.', 'success');
+                    showAuthTab('login');
+                }
+            } catch (err) {
+                showAuthError('Der opstod en fejl. Prøv igen.');
+                console.error('Forgot password error:', err);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Send nulstillingslink';
+            }
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+
+            try {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Logger ind...';
+
+                const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+
+                if (error) {
+                    // Translate common error messages to Danish
+                    let errorMessage = error.message;
+                    if (error.message.includes('Invalid login credentials')) {
+                        errorMessage = 'Forkert email eller adgangskode. Prøv igen.';
+                    } else if (error.message.includes('Email not confirmed')) {
+                        errorMessage = 'Din email er ikke bekræftet endnu. Tjek din indbakke.';
+                    } else if (error.message.includes('Too many requests')) {
+                        errorMessage = 'For mange loginforsøg. Vent venligst et øjeblik og prøv igen.';
+                    }
+                    showAuthError(errorMessage);
+                } else {
+                    currentUser = data.user;
+                    await loadUserData();
+                }
+            } catch (err) {
+                showAuthError('Der opstod en uventet fejl. Prøv venligst igen.');
+                console.error('Login error:', err);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Log ind';
+            }
+        }
+
+        async function handleSignup(e) {
+            e.preventDefault();
+            const name = document.getElementById('signup-name').value;
+            const email = document.getElementById('signup-email').value;
+            const password = document.getElementById('signup-password').value;
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+
+            try {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Opretter konto...';
+
+                const { data, error } = await supabaseClient.auth.signUp({
+                    email,
+                    password,
+                    options: {
+                        data: { display_name: name }
+                    }
+                });
+
+                if (error) {
+                    // Check if this is a duplicate email error (Supabase returns "Database error" for existing users)
+                    if (error.message.includes('Database error') || error.message.includes('already registered')) {
+                        // Auto-switch to login tab and pre-fill email
+                        showAuthTab('login');
+                        document.getElementById('login-email').value = email;
+                        showAuthError('Denne email er allerede registreret. Log ind med din adgangskode.');
+                    } else {
+                        // Show generic error for other issues
+                        showAuthError('Der opstod en fejl under oprettelsen. Prøv venligst igen.');
+                    }
+                    return;
+                } else if (data.user) {
+                    // Check if email confirmation is required (identities empty = user already exists)
+                    if (data.user.identities && data.user.identities.length === 0) {
+                        // Auto-switch to login tab and pre-fill email
+                        showAuthTab('login');
+                        document.getElementById('login-email').value = email;
+                        showAuthError('Denne email er allerede registreret. Log ind med din adgangskode.');
+                    } else {
+                        currentUser = data.user;
+                        await loadUserData();
+                    }
+                }
+            } catch (err) {
+                showAuthError('Der opstod en uventet fejl. Prøv venligst igen.');
+                console.error('Signup error:', err);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Opret konto';
+            }
+        }
+
+        async function handleLogout() {
+            await supabaseClient.auth.signOut();
+            currentUser = null;
+            currentOrg = null;
+            organizations = [];
+            showScreen('auth');
+        }
+
+        function showAuthError(message) {
+            const el = document.getElementById('auth-error');
+            el.textContent = message;
+            el.classList.remove('hidden');
+        }
+
+        // ==================== DATA LOADING ====================
+        async function loadUserData() {
+            const { data: memberData } = await supabaseClient
+                .from('members')
+                .select('organization_id, role, organizations(id, name)')
+                .eq('user_id', currentUser.id);
+
+            organizations = memberData?.map(m => ({
+                id: m.organizations.id,
+                name: m.organizations.name,
+                role: m.role
+            })) || [];
+
+            const { data: invitations } = await supabaseClient
+                .from('invitations')
+                .select('*, organizations(name)')
+                .ilike('email', currentUser.email);
+
+            if (organizations.length === 0 && (!invitations || invitations.length === 0)) {
+                showScreen('setup');
+                return;
+            }
+
+            if (invitations && invitations.length > 0) {
+                showScreen('setup');
+                renderPendingInvitations(invitations);
+                return;
+            }
+
+            currentOrg = organizations[0];
+            await loadOrganizationData();
+            showScreen('app');
+        }
+
+        async function loadOrganizationData() {
+            if (!currentOrg) return;
+
+            document.getElementById('user-display').textContent = currentUser.user_metadata?.display_name || currentUser.email;
+            populateOrgSelector();
+
+            await Promise.all([
+                loadMembers(),
+                loadCases(),
+                loadTasks(),
+                loadChats(),
+                loadSharedLinks()
+            ]);
+
+            updateDashboard();
+            initEmojiPicker();
+            initGoogleDrive();
+            loadTeamSharedFiles();
+        }
+
+        function populateOrgSelector() {
+            const selector = document.getElementById('org-selector');
+            selector.innerHTML = organizations.map(org =>
+                `<option value="${org.id}" ${org.id === currentOrg.id ? 'selected' : ''}>${org.name}</option>`
+            ).join('');
+        }
+
+        async function switchOrganization() {
+            const orgId = document.getElementById('org-selector').value;
+            currentOrg = organizations.find(o => o.id === orgId);
+            await loadOrganizationData();
+            showPage('dashboard');
+        }
+
+        // ==================== MEMBERS ====================
+        async function loadMembers() {
+            const { data } = await supabaseClient
+                .from('members')
+                .select('*')
+                .eq('organization_id', currentOrg.id);
+
+            members = data || [];
+            renderMembers();
+            populateMemberSelects();
+            populatePersonFilter();
+        }
+
+        function renderMembers() {
+            const container = document.getElementById('members-list');
+            const isAdmin = members.find(m => m.user_id === currentUser.id)?.role === 'admin';
+
+            document.getElementById('invite-btn').classList.toggle('hidden', !isAdmin);
+
+            container.innerHTML = members.map(m => `
+                <div class="member-item">
+                    <div class="member-avatar">${(m.display_name || m.email).charAt(0).toUpperCase()}</div>
+                    <div class="member-info">
+                        <div class="member-name">${m.display_name || m.email}</div>
+                        <div class="member-email">${m.email}</div>
+                    </div>
+                    <span class="role-badge role-${m.role}">${m.role === 'admin' ? 'Admin' : 'Medlem'}</span>
+                </div>
+            `).join('');
+
+            loadInvitations();
+        }
+
+        async function loadInvitations() {
+            const isAdmin = members.find(m => m.user_id === currentUser.id)?.role === 'admin';
+            const card = document.getElementById('invitations-card');
+
+            if (!isAdmin) {
+                card.classList.add('hidden');
+                return;
+            }
+
+            const { data } = await supabaseClient
+                .from('invitations')
+                .select('*')
+                .eq('organization_id', currentOrg.id);
+
+            card.classList.toggle('hidden', !data || data.length === 0);
+
+            if (data && data.length > 0) {
+                document.getElementById('invitations-list').innerHTML = data.map(inv => `
+                    <div class="member-item">
+                        <div class="member-avatar" style="background: var(--text-light);">?</div>
+                        <div class="member-info">
+                            <div class="member-name">${inv.email}</div>
+                            <div class="member-email">Afventer svar</div>
+                        </div>
+                        <button class="btn btn-small btn-danger" onclick="cancelInvitation('${inv.id}')">Annullér</button>
+                    </div>
+                `).join('');
+            }
+        }
+
+        async function sendInvitation(e) {
+            e.preventDefault();
+            const name = document.getElementById('invite-name').value.trim();
+            const email = document.getElementById('invite-email').value.trim().toLowerCase();
+            const password = document.getElementById('invite-password').value;
+
+            if (password.length < 6) {
+                showToast('Adgangskoden skal være mindst 6 tegn', 'error');
+                return;
+            }
+
+            try {
+                // Step 1: Create user account via signUp
+                const { data: signUpData, error: signUpError } = await supabaseClient.auth.signUp({
+                    email: email,
+                    password: password,
+                    options: {
+                        data: {
+                            display_name: name
+                        }
+                    }
+                });
+
+                if (signUpError) {
+                    // Check if user already exists
+                    if (signUpError.message.includes('already registered') || signUpError.message.includes('Database error')) {
+                        throw new Error('En bruger med denne email findes allerede. Prøv en anden email.');
+                    }
+                    throw signUpError;
+                }
+
+                if (!signUpData.user) {
+                    throw new Error('Kunne ikke oprette bruger');
+                }
+
+                // Step 2: Add user as member via database function
+                const { error: memberError } = await supabaseClient.rpc('admin_add_member', {
+                    p_organization_id: currentOrg.id,
+                    p_user_id: signUpData.user.id,
+                    p_email: email,
+                    p_display_name: name
+                });
+
+                if (memberError) {
+                    console.error('Error adding member:', memberError);
+                    // User was created but not added to org - they can still accept invitation later
+                    throw new Error('Bruger oprettet, men kunne ikke tilføjes til organisationen automatisk');
+                }
+
+                closeModal('invite-modal');
+                document.getElementById('invite-name').value = '';
+                document.getElementById('invite-email').value = '';
+                document.getElementById('invite-password').value = '';
+                await loadMembers();
+                showToast(`${name} er nu tilføjet! De kan logge ind med den angivne adgangskode.`, 'success');
+            } catch (error) {
+                console.error('Error creating member:', error);
+                showToast('Fejl: ' + error.message, 'error');
+            }
+        }
+
+        async function cancelInvitation(id) {
+            await supabaseClient.from('invitations').delete().eq('id', id);
+            loadInvitations();
+        }
+
+        function populateMemberSelects() {
+            const options = '<option value="">Ingen</option>' +
+                members.map(m => `<option value="${m.user_id}">${m.display_name || m.email}</option>`).join('');
+
+            document.getElementById('case-assigned').innerHTML = options;
+            document.getElementById('task-assigned').innerHTML = options;
+        }
+
+        function populatePersonFilter() {
+            const container = document.getElementById('person-filter-options');
+            container.innerHTML = members.map(m => `
+                <div class="filter-option" onclick="filterByPerson('${m.user_id}')">${m.display_name || m.email}</div>
+            `).join('');
+        }
+
+        // ==================== CASES ====================
+        async function loadCases() {
+            const { data } = await supabaseClient
+                .from('cases')
+                .select('*')
+                .eq('organization_id', currentOrg.id)
+                .order('created_at', { ascending: false });
+
+            cases = data || [];
+            renderCases();
+            populateCaseSelect();
+        }
+
+        function searchCases(query) {
+            caseSearchQuery = query.toLowerCase();
+            renderCases();
+        }
+
+        function renderCases() {
+            let filtered = currentCaseFilter === 'all'
+                ? cases
+                : cases.filter(c => c.status === currentCaseFilter);
+
+            if (caseSearchQuery) {
+                filtered = filtered.filter(c =>
+                    c.title.toLowerCase().includes(caseSearchQuery) ||
+                    (c.description && c.description.toLowerCase().includes(caseSearchQuery))
+                );
+            }
+
+            const container = document.getElementById('cases-list');
+
+            if (filtered.length === 0) {
+                container.innerHTML = renderEmptyState(
+                    '📁',
+                    'Ingen sager fundet',
+                    caseSearchQuery ? 'Prøv at ændre din søgning eller fjern filteret.' : 'Opret din første sag for at komme i gang med at holde styr på dine vigtige informationer.',
+                    caseSearchQuery ? null : '+ Opret første sag',
+                    caseSearchQuery ? null : "openModal('case-modal')"
+                );
+                return;
+            }
+
+            container.innerHTML = filtered.map(c => {
+                const assignee = members.find(m => m.user_id === c.assigned_to);
+                const meta = c.metadata || {};
+                const categoryIcon = getCategoryIcon(meta.category);
+                const hasPrice = meta.monthly_price && meta.monthly_price > 0;
+
+                return `
+                    <div class="list-item" style="border-left-color: ${getPriorityColor(c.priority)}">
+                        <div class="list-header">
+                            <span class="list-title">${categoryIcon ? categoryIcon + ' ' : ''}${escapeHtml(c.title)}</span>
+                            <div style="display: flex; gap: 8px; align-items: center;">
+                                ${hasPrice ? `<span style="font-weight: 600; color: var(--success);">${formatPrice(meta.monthly_price)}/md</span>` : ''}
+                                <span class="status-badge status-${c.status}">${getStatusText(c.status)}</span>
+                            </div>
+                        </div>
+                        ${c.description ? `<div class="list-description">${escapeHtml(c.description)}</div>` : ''}
+                        <div class="list-meta">
+                            ${meta.category ? `<span class="list-meta-item">${getCategoryText(meta.category)}</span>` : ''}
+                            <span class="list-meta-item">👤 ${assignee ? (assignee.display_name || assignee.email) : 'Ingen'}</span>
+                            ${meta.contact_phone ? `<span class="list-meta-item">📞 ${meta.contact_phone}</span>` : ''}
+                            ${meta.end_date ? `<span class="list-meta-item">📅 Udløber: ${formatDate(meta.end_date)}</span>` : ''}
+                        </div>
+                        ${meta.address ? `<div class="list-meta" style="margin-top: 4px;"><span class="list-meta-item">📍 ${escapeHtml(meta.address)}</span></div>` : ''}
+                        <div class="list-actions">
+                            ${meta.website ? `<button class="btn btn-small btn-outline" onclick="window.open('${meta.website}', '_blank')">🔗 Åbn</button>` : ''}
+                            ${meta.contact_phone ? `<button class="btn btn-small btn-outline" onclick="window.open('tel:${meta.contact_phone}')">📞 Ring</button>` : ''}
+                            <button class="btn btn-small btn-outline" onclick="viewCase('${c.id}')">Se detaljer</button>
+                            <button class="btn btn-small btn-primary" onclick="editCase('${c.id}')">Rediger</button>
+                            <button class="btn btn-small btn-danger" onclick="deleteCase('${c.id}')">Slet</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function viewCase(id) {
+            const c = cases.find(x => x.id === id);
+            if (!c) return;
+
+            const meta = c.metadata || {};
+            const assignee = members.find(m => m.user_id === c.assigned_to);
+            const categoryIcon = getCategoryIcon(meta.category);
+
+            let html = `
+                <div style="margin-bottom: 20px;">
+                    <span class="status-badge status-${c.status}" style="margin-right: 8px;">${getStatusText(c.status)}</span>
+                    ${meta.category ? `<span style="font-size: 0.85em; color: var(--text-medium);">${getCategoryText(meta.category)}</span>` : ''}
+                </div>
+            `;
+
+            if (c.description) {
+                html += `<p style="color: var(--text-medium); margin-bottom: 16px; line-height: 1.6;">${escapeHtml(c.description)}</p>`;
+            }
+
+            html += `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">`;
+
+            // Left column
+            html += `<div>`;
+            html += `<div style="font-size: 0.8em; color: var(--text-light); text-transform: uppercase; margin-bottom: 4px;">Prioritet</div>`;
+            html += `<div style="font-weight: 500; margin-bottom: 12px;">${getPriorityText(c.priority)}</div>`;
+
+            html += `<div style="font-size: 0.8em; color: var(--text-light); text-transform: uppercase; margin-bottom: 4px;">Tildelt til</div>`;
+            html += `<div style="font-weight: 500; margin-bottom: 12px;">${assignee ? (assignee.display_name || assignee.email) : 'Ingen'}</div>`;
+
+            if (meta.monthly_price) {
+                html += `<div style="font-size: 0.8em; color: var(--text-light); text-transform: uppercase; margin-bottom: 4px;">Månedlig pris</div>`;
+                html += `<div style="font-weight: 600; color: var(--success); margin-bottom: 12px;">${formatPrice(meta.monthly_price)}</div>`;
+            }
+            html += `</div>`;
+
+            // Right column
+            html += `<div>`;
+            if (meta.start_date) {
+                html += `<div style="font-size: 0.8em; color: var(--text-light); text-transform: uppercase; margin-bottom: 4px;">Start dato</div>`;
+                html += `<div style="font-weight: 500; margin-bottom: 12px;">${formatDate(meta.start_date)}</div>`;
+            }
+            if (meta.end_date) {
+                html += `<div style="font-size: 0.8em; color: var(--text-light); text-transform: uppercase; margin-bottom: 4px;">Slut dato</div>`;
+                html += `<div style="font-weight: 500; margin-bottom: 12px;">${formatDate(meta.end_date)}</div>`;
+            }
+            if (meta.payment_frequency) {
+                html += `<div style="font-size: 0.8em; color: var(--text-light); text-transform: uppercase; margin-bottom: 4px;">Betalingsfrekvens</div>`;
+                html += `<div style="font-weight: 500; margin-bottom: 12px;">${getPaymentFrequencyText(meta.payment_frequency)}</div>`;
+            }
+            html += `</div>`;
+            html += `</div>`;
+
+            // Contact info
+            if (meta.contact_name || meta.contact_phone || meta.contact_email || meta.address) {
+                html += `<div style="border-top: 1px solid var(--border); padding-top: 16px; margin-top: 8px;">`;
+                html += `<div style="font-size: 0.8em; color: var(--text-light); text-transform: uppercase; margin-bottom: 12px;">📇 Kontaktoplysninger</div>`;
+
+                if (meta.contact_name) {
+                    html += `<div style="margin-bottom: 8px;"><strong>${escapeHtml(meta.contact_name)}</strong></div>`;
+                }
+
+                if (meta.contact_phone || meta.contact_email) {
+                    html += `<div style="display: flex; gap: 12px; margin-bottom: 8px;">`;
+                    if (meta.contact_phone) {
+                        html += `<a href="tel:${meta.contact_phone}" class="btn btn-small btn-outline">📞 ${meta.contact_phone}</a>`;
+                    }
+                    if (meta.contact_email) {
+                        html += `<a href="mailto:${meta.contact_email}" class="btn btn-small btn-outline">📧 Email</a>`;
+                    }
+                    html += `</div>`;
+                }
+
+                if (meta.address) {
+                    html += `<div style="color: var(--text-medium); font-size: 0.9em;">📍 ${escapeHtml(meta.address)}</div>`;
+                }
+                html += `</div>`;
+            }
+
+            // Website
+            if (meta.website) {
+                html += `<div style="margin-top: 12px;">`;
+                html += `<a href="${meta.website}" target="_blank" class="btn btn-small btn-outline">🔗 Åbn website</a>`;
+                html += `</div>`;
+            }
+
+            // Notes
+            if (meta.notes) {
+                html += `<div style="border-top: 1px solid var(--border); padding-top: 16px; margin-top: 16px;">`;
+                html += `<div style="font-size: 0.8em; color: var(--text-light); text-transform: uppercase; margin-bottom: 8px;">📝 Noter</div>`;
+                html += `<div style="color: var(--text-medium); font-size: 0.9em; line-height: 1.6; background: var(--bg-light); padding: 12px; border-radius: var(--radius);">${escapeHtml(meta.notes)}</div>`;
+                html += `</div>`;
+            }
+
+            document.getElementById('case-detail-title').textContent = `${categoryIcon ? categoryIcon + ' ' : ''}${c.title}`;
+            document.getElementById('case-detail-content').innerHTML = html;
+            document.getElementById('case-detail-edit-btn').onclick = () => {
+                closeModal('case-detail-modal');
+                editCase(id);
+            };
+            openModal('case-detail-modal');
+        }
+
+        function getPriorityText(priority) {
+            const texts = { low: '🔵 Lav', medium: '🟢 Normal', high: '🔴 Høj' };
+            return texts[priority] || priority;
+        }
+
+        function getPaymentFrequencyText(freq) {
+            const texts = { monthly: 'Månedlig', quarterly: 'Kvartalsvis', yearly: 'Årlig', once: 'Engangsbetaling' };
+            return texts[freq] || freq;
+        }
+
+        function getCategoryIcon(category) {
+            const icons = {
+                health: '🏥',
+                finance: '💰',
+                housing: '🏠',
+                insurance: '🛡️',
+                subscription: '📱',
+                car: '🚗',
+                family: '👨‍👩‍👧‍👦',
+                work: '💼',
+                education: '📚',
+                legal: '⚖️',
+                other: '📋'
+            };
+            return icons[category] || '';
+        }
+
+        function getCategoryText(category) {
+            const texts = {
+                health: '🏥 Sundhed',
+                finance: '💰 Økonomi',
+                housing: '🏠 Bolig',
+                insurance: '🛡️ Forsikring',
+                subscription: '📱 Abonnement',
+                car: '🚗 Bil',
+                family: '👨‍👩‍👧‍👦 Familie',
+                work: '💼 Arbejde',
+                education: '📚 Uddannelse',
+                legal: '⚖️ Juridisk',
+                other: '📋 Andet'
+            };
+            return texts[category] || category;
+        }
+
+        function formatPrice(price) {
+            return new Intl.NumberFormat('da-DK', { style: 'currency', currency: 'DKK' }).format(price);
+        }
+
+        function filterCases(status) {
+            currentCaseFilter = status;
+            document.querySelectorAll('#page-cases .tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            renderCases();
+        }
+
+        async function saveCase(e) {
+            e.preventDefault();
+            const id = document.getElementById('case-id').value;
+
+            // Extended case data stored as JSON metadata
+            const metadata = {
+                category: document.getElementById('case-category').value || null,
+                monthly_price: parseFloat(document.getElementById('case-monthly-price').value) || null,
+                payment_frequency: document.getElementById('case-payment-frequency').value || null,
+                start_date: document.getElementById('case-start-date').value || null,
+                end_date: document.getElementById('case-end-date').value || null,
+                contact_name: document.getElementById('case-contact-name').value || null,
+                contact_phone: document.getElementById('case-contact-phone').value || null,
+                contact_email: document.getElementById('case-contact-email').value || null,
+                address: document.getElementById('case-address').value || null,
+                website: document.getElementById('case-website').value || null,
+                notes: document.getElementById('case-notes').value || null
+            };
+
+            const caseData = {
+                organization_id: currentOrg.id,
+                title: document.getElementById('case-title').value,
+                description: document.getElementById('case-description').value,
+                status: document.getElementById('case-status').value,
+                priority: document.getElementById('case-priority').value,
+                assigned_to: document.getElementById('case-assigned').value || null,
+                created_by: currentUser.id,
+                metadata: metadata
+            };
+
+            if (id) {
+                await supabaseClient.from('cases').update(caseData).eq('id', id);
+                showToast('Sagen er blevet opdateret', 'success');
+            } else {
+                await supabaseClient.from('cases').insert(caseData);
+                showToast('Ny sag oprettet', 'success');
+            }
+
+            closeModal('case-modal');
+            resetCaseForm();
+            await loadCases();
+            updateDashboard();
+        }
+
+        function editCase(id) {
+            const c = cases.find(x => x.id === id);
+            if (!c) return;
+
+            const meta = c.metadata || {};
+
+            document.getElementById('case-id').value = c.id;
+            document.getElementById('case-title').value = c.title;
+            document.getElementById('case-description').value = c.description || '';
+            document.getElementById('case-status').value = c.status;
+            document.getElementById('case-priority').value = c.priority;
+            document.getElementById('case-assigned').value = c.assigned_to || '';
+
+            // Extended fields
+            document.getElementById('case-category').value = meta.category || '';
+            document.getElementById('case-monthly-price').value = meta.monthly_price || '';
+            document.getElementById('case-payment-frequency').value = meta.payment_frequency || '';
+            document.getElementById('case-start-date').value = meta.start_date || '';
+            document.getElementById('case-end-date').value = meta.end_date || '';
+            document.getElementById('case-contact-name').value = meta.contact_name || '';
+            document.getElementById('case-contact-phone').value = meta.contact_phone || '';
+            document.getElementById('case-contact-email').value = meta.contact_email || '';
+            document.getElementById('case-address').value = meta.address || '';
+            document.getElementById('case-website').value = meta.website || '';
+            document.getElementById('case-notes').value = meta.notes || '';
+
+            // Update modal title and reset to first tab
+            document.getElementById('case-modal-title').textContent = 'Rediger sag';
+            switchCaseTab('basic');
+
+            openModal('case-modal');
+        }
+
+        async function deleteCase(id) {
+            const confirmed = await showConfirm(
+                'Slet sag?',
+                'Er du sikker på, at du vil slette denne sag? Alle tilknyttede data vil blive slettet permanent.',
+                '🗑️',
+                'Slet sag',
+                true
+            );
+            if (!confirmed) return;
+
+            await supabaseClient.from('cases').delete().eq('id', id);
+            await loadCases();
+            updateDashboard();
+            showToast('Sagen er blevet slettet', 'success');
+        }
+
+        function resetCaseForm() {
+            document.getElementById('case-id').value = '';
+            document.getElementById('case-title').value = '';
+            document.getElementById('case-description').value = '';
+            document.getElementById('case-status').value = 'open';
+            document.getElementById('case-priority').value = 'medium';
+            document.getElementById('case-assigned').value = '';
+
+            // Extended fields
+            document.getElementById('case-category').value = '';
+            document.getElementById('case-monthly-price').value = '';
+            document.getElementById('case-payment-frequency').value = '';
+            document.getElementById('case-start-date').value = '';
+            document.getElementById('case-end-date').value = '';
+            document.getElementById('case-contact-name').value = '';
+            document.getElementById('case-contact-phone').value = '';
+            document.getElementById('case-contact-email').value = '';
+            document.getElementById('case-address').value = '';
+            document.getElementById('case-website').value = '';
+            document.getElementById('case-notes').value = '';
+
+            // Reset tabs to first tab
+            switchCaseTab('basic');
+            document.getElementById('case-modal-title').textContent = 'Ny sag';
+        }
+
+        function switchCaseTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('#case-modal .modal-tab').forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.tab === tabName);
+            });
+
+            // Update tab content
+            document.querySelectorAll('#case-modal .modal-tab-content').forEach(content => {
+                content.classList.toggle('active', content.id === `case-tab-${tabName}`);
+            });
+        }
+
+        function populateCaseSelect() {
+            const options = '<option value="">Ingen</option>' +
+                cases.filter(c => c.status !== 'closed').map(c =>
+                    `<option value="${c.id}">${escapeHtml(c.title)}</option>`
+                ).join('');
+            document.getElementById('task-case').innerHTML = options;
+        }
+
+        // ==================== TASKS ====================
+        async function loadTasks() {
+            const { data } = await supabaseClient
+                .from('tasks')
+                .select('*')
+                .eq('organization_id', currentOrg.id)
+                .order('created_at', { ascending: false });
+
+            tasks = data || [];
+            renderTasks();
+            updateTaskBadge();
+        }
+
+        function updateTaskBadge() {
+            const openTasks = tasks.filter(t => !t.completed).length;
+            const badge = document.getElementById('task-badge');
+            if (openTasks > 0) {
+                badge.textContent = openTasks;
+                badge.style.display = 'block';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        function toggleFilterMenu() {
+            document.getElementById('filter-menu').classList.toggle('active');
+        }
+
+        function filterByPerson(userId) {
+            currentPersonFilter = userId;
+            const member = members.find(m => m.user_id === userId);
+            document.getElementById('filter-label').textContent = member ? (member.display_name || member.email) : 'Alle personer';
+
+            document.querySelectorAll('.filter-option').forEach(opt => opt.classList.remove('selected'));
+            event.target.classList.add('selected');
+
+            document.getElementById('filter-menu').classList.remove('active');
+            renderTasks();
+        }
+
+        function renderTasks() {
+            let filtered = currentTaskFilter === 'all'
+                ? tasks
+                : tasks.filter(t => t.period === currentTaskFilter);
+
+            if (currentPersonFilter) {
+                filtered = filtered.filter(t => t.assigned_to === currentPersonFilter);
+            }
+
+            filtered.sort((a, b) => {
+                if (a.completed !== b.completed) return a.completed ? 1 : -1;
+                if (a.deadline && b.deadline) return new Date(a.deadline) - new Date(b.deadline);
+                return 0;
+            });
+
+            const container = document.getElementById('tasks-list');
+
+            if (filtered.length === 0) {
+                const hasFilters = currentTaskFilter !== 'all' || currentPersonFilter;
+                container.innerHTML = renderEmptyState(
+                    '✅',
+                    hasFilters ? 'Ingen opgaver matcher filteret' : 'Ingen opgaver endnu',
+                    hasFilters ? 'Prøv at ændre dit filter for at se flere opgaver.' : 'Opret din første opgave for at begynde at holde styr på dine daglige gøremål.',
+                    hasFilters ? null : '+ Opret første opgave',
+                    hasFilters ? null : "openModal('task-modal')"
+                );
+                return;
+            }
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            container.innerHTML = filtered.map(t => {
+                const assignee = members.find(m => m.user_id === t.assigned_to);
+                const linkedCase = cases.find(c => c.id === t.case_id);
+                const isUrgent = t.deadline && new Date(t.deadline) <= new Date(today.getTime() + 2 * 24 * 60 * 60 * 1000) && !t.completed;
+
+                return `
+                    <div class="task-item ${t.completed ? 'completed' : ''} ${isUrgent ? 'urgent' : ''}">
+                        <div class="task-checkbox ${t.completed ? 'checked' : ''}" onclick="toggleTask('${t.id}')">
+                            ${t.completed ? '✓' : ''}
+                        </div>
+                        <div class="task-content">
+                            <div class="task-text">${escapeHtml(t.title)}</div>
+                            <div class="task-meta">
+                                <span class="period-badge period-${t.period}">${getPeriodText(t.period)}</span>
+                                ${assignee ? `<span>👤 ${assignee.display_name || assignee.email}</span>` : ''}
+                                ${t.deadline ? `<span>📅 ${formatDate(t.deadline)}</span>` : ''}
+                                ${linkedCase ? `<span>📁 ${escapeHtml(linkedCase.title)}</span>` : ''}
+                            </div>
+                        </div>
+                        <button class="btn btn-icon btn-outline" onclick="deleteTask('${t.id}')" title="Slet">🗑️</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function filterTasks(period) {
+            currentTaskFilter = period;
+            document.querySelectorAll('#page-tasks .tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            renderTasks();
+        }
+
+        async function saveTask(e) {
+            e.preventDefault();
+            const id = document.getElementById('task-id').value;
+
+            const taskData = {
+                organization_id: currentOrg.id,
+                title: document.getElementById('task-title').value,
+                description: document.getElementById('task-description').value,
+                period: document.getElementById('task-period').value,
+                deadline: document.getElementById('task-deadline').value || null,
+                assigned_to: document.getElementById('task-assigned').value || null,
+                case_id: document.getElementById('task-case').value || null,
+                created_by: currentUser.id
+            };
+
+            if (id) {
+                await supabaseClient.from('tasks').update(taskData).eq('id', id);
+                showToast('Opgaven er blevet opdateret', 'success');
+            } else {
+                await supabaseClient.from('tasks').insert(taskData);
+                showToast('Ny opgave oprettet', 'success');
+            }
+
+            closeModal('task-modal');
+            resetTaskForm();
+            await loadTasks();
+            updateDashboard();
+        }
+
+        async function toggleTask(id) {
+            const task = tasks.find(t => t.id === id);
+            if (!task) return;
+
+            // Add animation to the task item
+            const taskElement = document.querySelector(`.task-item .task-checkbox[onclick*="${id}"]`)?.closest('.task-item');
+            const checkboxElement = document.querySelector(`.task-checkbox[onclick*="${id}"]`);
+
+            if (!task.completed && taskElement) {
+                taskElement.classList.add('completing');
+                checkboxElement?.classList.add('checking');
+            }
+
+            await supabaseClient.from('tasks').update({
+                completed: !task.completed,
+                completed_at: !task.completed ? new Date().toISOString() : null,
+                completed_by: !task.completed ? currentUser.id : null
+            }).eq('id', id);
+
+            // Show toast for completion
+            if (!task.completed) {
+                showToast(`"${task.title}" er fuldført!`, 'success', 'Godt arbejde! 🎉');
+            }
+
+            await loadTasks();
+            updateDashboard();
+        }
+
+        async function deleteTask(id) {
+            const confirmed = await showConfirm(
+                'Slet opgave?',
+                'Er du sikker på, at du vil slette denne opgave?',
+                '🗑️',
+                'Slet opgave',
+                true
+            );
+            if (!confirmed) return;
+
+            await supabaseClient.from('tasks').delete().eq('id', id);
+            await loadTasks();
+            updateDashboard();
+            showToast('Opgaven er blevet slettet', 'success');
+        }
+
+        function resetTaskForm() {
+            document.getElementById('task-id').value = '';
+            document.getElementById('task-title').value = '';
+            document.getElementById('task-description').value = '';
+            document.getElementById('task-period').value = 'daily';
+            document.getElementById('task-deadline').value = '';
+            document.getElementById('task-assigned').value = '';
+            document.getElementById('task-case').value = '';
+        }
+
+        // ==================== CHAT ====================
+        async function loadChats() {
+            const { data } = await supabaseClient
+                .from('chats')
+                .select('*')
+                .eq('organization_id', currentOrg.id)
+                .order('created_at', { ascending: false });
+
+            chats = data || [];
+            renderChats();
+        }
+
+        function renderChats() {
+            const container = document.getElementById('chat-list');
+
+            if (chats.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state" style="padding: 30px;">
+                        <p>Ingen samtaler endnu</p>
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = chats.map(c => `
+                <div class="chat-item ${activeChat?.id === c.id ? 'active' : ''}" onclick="selectChat('${c.id}')">
+                    <div class="chat-item-name">${escapeHtml(c.name)}</div>
+                    <div class="chat-item-preview">Klik for at se beskeder</div>
+                </div>
+            `).join('');
+        }
+
+        async function createChat(e) {
+            e.preventDefault();
+            const name = document.getElementById('chat-name').value;
+
+            const { data, error } = await supabaseClient
+                .from('chats')
+                .insert({
+                    organization_id: currentOrg.id,
+                    name: name,
+                    created_by: currentUser.id
+                })
+                .select()
+                .single();
+
+            if (error) {
+                showToast('Kunne ikke oprette samtale: ' + error.message, 'error');
+            } else {
+                closeModal('chat-modal');
+                document.getElementById('chat-name').value = '';
+                await loadChats();
+                selectChat(data.id);
+                showToast(`Samtalen "${name}" er oprettet`, 'success');
+            }
+        }
+
+        async function selectChat(chatId) {
+            activeChat = chats.find(c => c.id === chatId);
+            renderChats();
+
+            document.getElementById('chat-header').textContent = activeChat.name;
+            document.getElementById('chat-input-area').classList.remove('hidden');
+
+            if (messageSubscription) {
+                messageSubscription.unsubscribe();
+            }
+
+            await loadMessages();
+
+            messageSubscription = supabaseClient
+                .channel(`messages:${chatId}`)
+                .on('postgres_changes', {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'messages',
+                    filter: `chat_id=eq.${chatId}`
+                }, (payload) => {
+                    appendMessage(payload.new);
+                })
+                .subscribe();
+        }
+
+        async function loadMessages() {
+            if (!activeChat) return;
+
+            const { data } = await supabaseClient
+                .from('messages')
+                .select('*')
+                .eq('chat_id', activeChat.id)
+                .order('created_at', { ascending: true });
+
+            const container = document.getElementById('chat-messages');
+
+            if (!data || data.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <p>Ingen beskeder endnu. Skriv den første!</p>
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = data.map(m => renderMessage(m)).join('');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function renderMessage(msg) {
+            const sender = members.find(m => m.user_id === msg.sender_id);
+            const isSent = msg.sender_id === currentUser.id;
+
+            return `
+                <div class="message ${isSent ? 'sent' : 'received'}">
+                    <div class="message-sender">${sender?.display_name || sender?.email || 'Ukendt'}</div>
+                    <div class="message-bubble">${escapeHtml(msg.content)}</div>
+                    <div class="message-time">${formatTime(msg.created_at)}</div>
+                </div>
+            `;
+        }
+
+        function appendMessage(msg) {
+            const container = document.getElementById('chat-messages');
+            const emptyState = container.querySelector('.empty-state');
+            if (emptyState) emptyState.remove();
+
+            container.insertAdjacentHTML('beforeend', renderMessage(msg));
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function handleMessageKeypress(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        function handleTyping() {
+            // Typing indicator logic (simplified - would need realtime for full implementation)
+        }
+
+        async function sendMessage() {
+            if (!activeChat) return;
+
+            const input = document.getElementById('message-input');
+            const content = input.value.trim();
+            if (!content) return;
+
+            input.value = '';
+
+            await supabaseClient.from('messages').insert({
+                chat_id: activeChat.id,
+                sender_id: currentUser.id,
+                content: content
+            });
+        }
+
+        // Emoji Picker
+        function initEmojiPicker() {
+            const grid = document.getElementById('emoji-grid');
+            grid.innerHTML = emojis.map(emoji => `
+                <div class="emoji-item" onclick="insertEmoji('${emoji}')">${emoji}</div>
+            `).join('');
+        }
+
+        function toggleEmojiPicker() {
+            document.getElementById('emoji-picker').classList.toggle('active');
+        }
+
+        function insertEmoji(emoji) {
+            const input = document.getElementById('message-input');
+            input.value += emoji;
+            input.focus();
+            document.getElementById('emoji-picker').classList.remove('active');
+        }
+
+        // ==================== SHARED LINKS ====================
+        async function loadSharedLinks() {
+            // For now, store in localStorage (could be moved to Supabase)
+            const stored = localStorage.getItem(`links_${currentOrg.id}`);
+            sharedLinks = stored ? JSON.parse(stored) : [];
+            renderSharedLinks();
+        }
+
+        function renderSharedLinks() {
+            const container = document.getElementById('shared-links');
+
+            if (sharedLinks.length === 0) {
+                container.innerHTML = '<p style="color: var(--text-light); text-align: center; padding: 20px;">Ingen delte links endnu</p>';
+                return;
+            }
+
+            container.innerHTML = sharedLinks.map((link, i) => `
+                <div class="drive-file" onclick="window.open('${link.url}', '_blank')">
+                    <div class="drive-file-icon">🔗</div>
+                    <div class="drive-file-name">${escapeHtml(link.title)}</div>
+                </div>
+            `).join('');
+        }
+
+        async function saveSharedLink(e) {
+            e.preventDefault();
+            const title = document.getElementById('link-title').value;
+            const url = document.getElementById('link-url').value;
+
+            sharedLinks.push({ title, url });
+            localStorage.setItem(`links_${currentOrg.id}`, JSON.stringify(sharedLinks));
+
+            closeModal('link-modal');
+            document.getElementById('link-title').value = '';
+            document.getElementById('link-url').value = '';
+            renderSharedLinks();
+        }
+
+        // ==================== GOOGLE DRIVE ====================
+        function initGoogleDrive() {
+            // Check if already connected
+            const savedToken = localStorage.getItem('googleAccessToken');
+            const savedUser = localStorage.getItem('googleUser');
+
+            if (savedToken && savedUser) {
+                googleAccessToken = savedToken;
+                googleUser = JSON.parse(savedUser);
+                showDriveConnected();
+                loadDriveFiles();
+            }
+        }
+
+        function connectGoogleDrive() {
+            // Initialize the token client
+            googleTokenClient = google.accounts.oauth2.initTokenClient({
+                client_id: GOOGLE_CLIENT_ID,
+                scope: GOOGLE_SCOPES,
+                callback: handleGoogleCallback,
+            });
+
+            // Request access token
+            googleTokenClient.requestAccessToken({ prompt: 'consent' });
+        }
+
+        async function handleGoogleCallback(response) {
+            if (response.error) {
+                console.error('Google Auth Error:', response);
+                showToast('Kunne ikke forbinde til Google: ' + response.error, 'error');
+                return;
+            }
+
+            googleAccessToken = response.access_token;
+            localStorage.setItem('googleAccessToken', googleAccessToken);
+
+            // Get user info
+            try {
+                const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+                    headers: { Authorization: `Bearer ${googleAccessToken}` }
+                });
+                googleUser = await userInfoResponse.json();
+                localStorage.setItem('googleUser', JSON.stringify(googleUser));
+
+                showDriveConnected();
+                loadDriveFiles();
+                showToast('Google Drive forbundet!', 'success');
+            } catch (error) {
+                console.error('Error getting user info:', error);
+                showToast('Kunne ikke hente brugeroplysninger', 'error');
+            }
+        }
+
+        function showDriveConnected() {
+            document.getElementById('drive-not-connected').classList.add('hidden');
+            document.getElementById('drive-connected').classList.remove('hidden');
+
+            if (googleUser) {
+                document.getElementById('drive-user-name').textContent = googleUser.name || 'Google Bruger';
+                document.getElementById('drive-user-email').textContent = googleUser.email || '';
+                document.getElementById('drive-user-photo').src = googleUser.picture || '';
+                document.getElementById('drive-user-photo').style.display = googleUser.picture ? 'block' : 'none';
+            }
+        }
+
+        async function disconnectGoogleDrive() {
+            const confirmed = await showConfirm(
+                'Afbryd Google Drive?',
+                'Er du sikker på, at du vil afbryde forbindelsen til Google Drive?',
+                '🔌',
+                'Afbryd',
+                true
+            );
+            if (!confirmed) return;
+
+            googleAccessToken = null;
+            googleUser = null;
+            driveFiles = [];
+
+            localStorage.removeItem('googleAccessToken');
+            localStorage.removeItem('googleUser');
+
+            document.getElementById('drive-not-connected').classList.remove('hidden');
+            document.getElementById('drive-connected').classList.add('hidden');
+            document.getElementById('drive-files').innerHTML = '';
+            showToast('Google Drive er afbrudt', 'info');
+        }
+
+        async function loadDriveFiles() {
+            if (!googleAccessToken) return;
+
+            document.getElementById('drive-files-loading').classList.remove('hidden');
+            document.getElementById('drive-files').innerHTML = '';
+
+            try {
+                const response = await fetch(
+                    'https://www.googleapis.com/drive/v3/files?pageSize=20&fields=files(id,name,mimeType,iconLink,webViewLink,thumbnailLink,modifiedTime,owners)&orderBy=modifiedTime desc',
+                    {
+                        headers: { Authorization: `Bearer ${googleAccessToken}` }
+                    }
+                );
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        // Token expired, disconnect
+                        googleAccessToken = null;
+                        googleUser = null;
+                        driveFiles = [];
+                        localStorage.removeItem('googleAccessToken');
+                        localStorage.removeItem('googleUser');
+                        document.getElementById('drive-not-connected').classList.remove('hidden');
+                        document.getElementById('drive-connected').classList.add('hidden');
+                        document.getElementById('drive-files').innerHTML = '';
+                        showToast('Din Google session er udløbet. Log venligst ind igen.', 'warning');
+                        return;
+                    }
+                    throw new Error('Failed to fetch files');
+                }
+
+                const data = await response.json();
+                driveFiles = data.files || [];
+                renderDriveFiles();
+            } catch (error) {
+                console.error('Error loading Drive files:', error);
+                document.getElementById('drive-files').innerHTML = '<p style="color: var(--danger); padding: 20px;">Kunne ikke hente filer. Prøv at forbinde igen.</p>';
+            } finally {
+                document.getElementById('drive-files-loading').classList.add('hidden');
+            }
+        }
+
+        function renderDriveFiles() {
+            const container = document.getElementById('drive-files');
+
+            if (driveFiles.length === 0) {
+                container.innerHTML = '<p style="color: var(--text-light); text-align: center; padding: 20px;">Ingen filer fundet i din Google Drive</p>';
+                return;
+            }
+
+            container.innerHTML = driveFiles.map(file => `
+                <div class="drive-file" onclick="openDriveFile('${file.webViewLink}')" data-file-id="${file.id}">
+                    <div class="drive-file-icon">${getDriveFileIcon(file.mimeType)}</div>
+                    <div class="drive-file-name" title="${escapeHtml(file.name)}">${escapeHtml(file.name)}</div>
+                    <div style="font-size: 0.75em; color: var(--text-light); margin-top: 4px;">${formatDate(file.modifiedTime)}</div>
+                    <button class="btn btn-small btn-outline" onclick="event.stopPropagation(); shareDriveFile('${file.id}', '${escapeHtml(file.name)}', '${file.webViewLink}')" style="margin-top: 8px; width: 100%;">Del med team</button>
+                </div>
+            `).join('');
+        }
+
+        function getDriveFileIcon(mimeType) {
+            if (!mimeType) return '📄';
+            if (mimeType.includes('folder')) return '📁';
+            if (mimeType.includes('document') || mimeType.includes('word')) return '📝';
+            if (mimeType.includes('spreadsheet') || mimeType.includes('excel')) return '📊';
+            if (mimeType.includes('presentation') || mimeType.includes('powerpoint')) return '📽️';
+            if (mimeType.includes('image')) return '🖼️';
+            if (mimeType.includes('video')) return '🎬';
+            if (mimeType.includes('audio')) return '🎵';
+            if (mimeType.includes('pdf')) return '📕';
+            if (mimeType.includes('zip') || mimeType.includes('archive')) return '📦';
+            return '📄';
+        }
+
+        function openDriveFile(url) {
+            if (url) {
+                window.open(url, '_blank');
+            }
+        }
+
+        async function shareDriveFile(fileId, fileName, fileUrl) {
+            // Save to team shared files (stored in localStorage per org)
+            const sharedFile = {
+                id: fileId,
+                name: fileName,
+                url: fileUrl,
+                sharedBy: currentUser.email,
+                sharedByName: currentUser.user_metadata?.display_name || currentUser.email,
+                sharedAt: new Date().toISOString()
+            };
+
+            const storageKey = `teamFiles_${currentOrg.id}`;
+            const existing = JSON.parse(localStorage.getItem(storageKey) || '[]');
+
+            // Check if already shared
+            if (existing.some(f => f.id === fileId)) {
+                showToast('Denne fil er allerede delt med teamet', 'warning');
+                return;
+            }
+
+            existing.push(sharedFile);
+            localStorage.setItem(storageKey, JSON.stringify(existing));
+
+            loadTeamSharedFiles();
+            showToast('Filen er nu delt med dit team!', 'success');
+        }
+
+        function loadTeamSharedFiles() {
+            if (!currentOrg) return;
+
+            const storageKey = `teamFiles_${currentOrg.id}`;
+            teamSharedFiles = JSON.parse(localStorage.getItem(storageKey) || '[]');
+            renderTeamSharedFiles();
+        }
+
+        function renderTeamSharedFiles() {
+            const container = document.getElementById('team-shared-files');
+
+            if (teamSharedFiles.length === 0) {
+                container.innerHTML = '<p style="color: var(--text-light); text-align: center; padding: 20px;">Ingen delte filer endnu. Forbind Google Drive og del filer med dit team.</p>';
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="drive-files">
+                    ${teamSharedFiles.map(file => `
+                        <div class="drive-file" onclick="window.open('${file.url}', '_blank')">
+                            <div class="drive-file-icon">📄</div>
+                            <div class="drive-file-name" title="${escapeHtml(file.name)}">${escapeHtml(file.name)}</div>
+                            <div style="font-size: 0.75em; color: var(--text-light); margin-top: 4px;">
+                                Delt af ${escapeHtml(file.sharedByName)}<br>
+                                ${formatDate(file.sharedAt)}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        // ==================== ORGANIZATION ====================
+        async function createOrganization(e) {
+            e.preventDefault();
+            const name = document.getElementById('org-name').value.trim();
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+
+            if (submitBtn.disabled) return; // Prevent double-click
+
+            try {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Opretter...';
+
+                // Simple insert without chaining
+                const { error: orgError } = await supabaseClient
+                    .from('organizations')
+                    .insert({
+                        name: name,
+                        created_by: currentUser.id
+                    });
+
+                if (orgError) {
+                    showToast('Fejl ved oprettelse: ' + orgError.message, 'error');
+                    return;
+                }
+
+                // Small delay to let trigger complete
+                await new Promise(resolve => setTimeout(resolve, 500));
+
+                // Reload user data (trigger already added user as admin)
+                await loadUserData();
+                showToast('Organisation oprettet!', 'success');
+
+            } catch (err) {
+                console.error('Create org error:', err);
+                showToast('Der opstod en fejl. Prøv igen.', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Opret organisation';
+            }
+        }
+
+        function renderPendingInvitations(invitations) {
+            const container = document.getElementById('pending-invitations');
+
+            container.innerHTML = invitations.map(inv => `
+                <div class="invitation-card">
+                    <div class="invitation-org">${escapeHtml(inv.organizations.name)}</div>
+                    <div class="invitation-from">Du er inviteret til at deltage</div>
+                    <div style="margin-top: 15px; display: flex; gap: 10px;">
+                        <button class="btn btn-primary" onclick="acceptInvitation('${inv.id}')">Acceptér</button>
+                        <button class="btn btn-outline" onclick="declineInvitation('${inv.id}')">Afvis</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function acceptInvitation(invitationId) {
+            try {
+                // Use the SQL function which has SECURITY DEFINER to bypass RLS
+                const { error } = await supabaseClient.rpc('accept_invitation', {
+                    invitation_id: invitationId
+                });
+
+                if (error) {
+                    console.error('Error accepting invitation:', error);
+                    showToast('Kunne ikke acceptere invitationen. Prøv igen.', 'error');
+                    return;
+                }
+
+                showToast('Du er nu medlem af organisationen!', 'success');
+                await loadUserData();
+            } catch (err) {
+                console.error('Error accepting invitation:', err);
+                showToast('Der opstod en fejl. Prøv igen.', 'error');
+            }
+        }
+
+        async function declineInvitation(invitationId) {
+            await supabaseClient.from('invitations').delete().eq('id', invitationId);
+            await loadUserData();
+        }
+
+        // ==================== DASHBOARD ====================
+        function updateDashboard() {
+            const activeCases = cases.filter(c => c.status !== 'closed').length;
+            const openTasks = tasks.filter(t => !t.completed).length;
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const completedToday = tasks.filter(t =>
+                t.completed && t.completed_at && new Date(t.completed_at) >= today
+            ).length;
+
+            // Calculate today's tasks (created today or recurring)
+            const todaysTasks = tasks.filter(t => {
+                if (t.period === 'daily') return true;
+                if (t.deadline) {
+                    const deadline = new Date(t.deadline);
+                    deadline.setHours(0, 0, 0, 0);
+                    return deadline.getTime() === today.getTime();
+                }
+                return false;
+            });
+
+            const totalTodayTasks = todaysTasks.length || 1; // Avoid division by zero
+            const completedTodayTasks = todaysTasks.filter(t => t.completed).length;
+            const progressPercent = Math.round((completedTodayTasks / totalTodayTasks) * 100);
+
+            document.getElementById('stat-cases').textContent = activeCases;
+            document.getElementById('stat-tasks').textContent = openTasks;
+            document.getElementById('stat-members').textContent = members.length;
+            document.getElementById('stat-completed').textContent = completedToday;
+
+            // Update progress ring
+            document.getElementById('progress-ring-container').innerHTML = createProgressRing(todaysTasks.length > 0 ? progressPercent : 0, 70);
+            document.getElementById('progress-text').textContent = `${completedTodayTasks} af ${todaysTasks.length} opgaver i dag`;
+
+            // Deadline alerts
+            const urgentTasks = tasks.filter(t => {
+                if (t.completed || !t.deadline) return false;
+                const deadline = new Date(t.deadline);
+                const twoDaysFromNow = new Date(today.getTime() + 2 * 24 * 60 * 60 * 1000);
+                return deadline <= twoDaysFromNow;
+            });
+
+            const alertsContainer = document.getElementById('deadline-alerts');
+            if (urgentTasks.length > 0) {
+                alertsContainer.innerHTML = `
+                    <div class="deadline-alert">
+                        <span class="deadline-alert-icon">⚠️</span>
+                        <div class="deadline-alert-content">
+                            <h4>${urgentTasks.length} opgave${urgentTasks.length > 1 ? 'r' : ''} med deadline snart</h4>
+                            <p>${urgentTasks.map(t => t.title).join(', ')}</p>
+                        </div>
+                    </div>
+                `;
+            } else {
+                alertsContainer.innerHTML = '';
+            }
+
+            // My tasks
+            const myTasks = tasks.filter(t => !t.completed && (!t.assigned_to || t.assigned_to === currentUser.id));
+            const tasksContainer = document.getElementById('dashboard-tasks');
+
+            if (myTasks.length === 0) {
+                tasksContainer.innerHTML = '<p style="color: var(--text-light); padding: 20px; text-align: center;">Ingen opgaver</p>';
+            } else {
+                tasksContainer.innerHTML = myTasks.slice(0, 5).map(t => `
+                    <div class="task-item" style="margin-bottom: 8px;">
+                        <div class="task-checkbox ${t.completed ? 'checked' : ''}" onclick="toggleTask('${t.id}')">
+                            ${t.completed ? '✓' : ''}
+                        </div>
+                        <div class="task-content">
+                            <div class="task-text">${escapeHtml(t.title)}</div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            // Activity feed (simplified)
+            const activityContainer = document.getElementById('activity-feed');
+            const recentTasks = tasks.slice(0, 5);
+
+            if (recentTasks.length === 0) {
+                activityContainer.innerHTML = '<p style="color: var(--text-light); text-align: center; padding: 20px;">Ingen aktivitet endnu</p>';
+            } else {
+                activityContainer.innerHTML = recentTasks.map(t => {
+                    const creator = members.find(m => m.user_id === t.created_by);
+                    return `
+                        <div class="activity-item">
+                            <div class="activity-icon">${t.completed ? '✅' : '📝'}</div>
+                            <div class="activity-content">
+                                <div class="activity-text">${t.completed ? 'Fuldførte' : 'Oprettede'} "${escapeHtml(t.title)}"</div>
+                                <div class="activity-time">${formatDate(t.completed_at || t.created_at)}</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        // ==================== UI HELPERS ====================
+        function showScreen(screen) {
+            document.getElementById('auth-screen').classList.toggle('hidden', screen !== 'auth');
+            document.getElementById('setup-screen').classList.toggle('hidden', screen !== 'setup');
+            document.getElementById('app-screen').classList.toggle('hidden', screen !== 'app');
+        }
+
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.querySelectorAll('.mobile-nav-item').forEach(n => n.classList.remove('active'));
+
+            document.getElementById('page-' + pageId).classList.remove('hidden');
+            document.querySelectorAll(`[data-page="${pageId}"]`).forEach(n => n.classList.add('active'));
+
+            if (pageId === 'dashboard') updateDashboard();
+        }
+
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        // ==================== UTILITIES ====================
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function formatDate(dateStr) {
+            return new Date(dateStr).toLocaleDateString('da-DK');
+        }
+
+        function formatTime(dateStr) {
+            return new Date(dateStr).toLocaleString('da-DK', {
+                day: '2-digit',
+                month: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function getStatusText(status) {
+            const texts = { open: 'Aktiv', progress: 'I gang', closed: 'Afsluttet' };
+            return texts[status] || status;
+        }
+
+        function getPeriodText(period) {
+            const texts = { daily: 'Daglig', weekly: 'Ugentlig', monthly: 'Månedlig' };
+            return texts[period] || period;
+        }
+
+        function getPriorityColor(priority) {
+            const colors = { low: '#22c55e', medium: '#6366f1', high: '#ef4444' };
+            return colors[priority] || colors.medium;
+        }
+
+        // ==================== TOAST NOTIFICATIONS ====================
+        function showToast(message, type = 'info', title = null, duration = 3000) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.style.setProperty('--toast-duration', `${duration}ms`);
+
+            const icons = {
+                success: '✅',
+                error: '❌',
+                warning: '⚠️',
+                info: 'ℹ️'
+            };
+
+            const titles = {
+                success: 'Succes',
+                error: 'Fejl',
+                warning: 'Advarsel',
+                info: 'Information'
+            };
+
+            toast.innerHTML = `
+                <span class="toast-icon">${icons[type]}</span>
+                <div class="toast-content">
+                    <div class="toast-title">${title || titles[type]}</div>
+                    <div class="toast-message">${message}</div>
+                </div>
+                <button class="toast-close" onclick="this.parentElement.remove()">×</button>
+            `;
+
+            container.appendChild(toast);
+
+            // Remove after animation completes
+            setTimeout(() => {
+                if (toast.parentElement) {
+                    toast.remove();
+                }
+            }, duration + 300);
+        }
+
+        // ==================== CONFIRMATION DIALOG ====================
+        let confirmResolve = null;
+
+        function showConfirm(title, message, icon = '⚠️', confirmText = 'Bekræft', isDanger = true) {
+            return new Promise((resolve) => {
+                confirmResolve = resolve;
+                document.getElementById('confirm-icon').textContent = icon;
+                document.getElementById('confirm-title').textContent = title;
+                document.getElementById('confirm-message').textContent = message;
+
+                const confirmBtn = document.getElementById('confirm-btn');
+                confirmBtn.textContent = confirmText;
+                confirmBtn.className = isDanger ? 'btn btn-danger' : 'btn btn-primary';
+
+                document.getElementById('confirm-dialog').classList.add('active');
+            });
+        }
+
+        function closeConfirmDialog(result) {
+            document.getElementById('confirm-dialog').classList.remove('active');
+            if (confirmResolve) {
+                confirmResolve(result);
+                confirmResolve = null;
+            }
+        }
+
+        // ==================== LOADING STATES ====================
+        function showLoadingSkeleton(containerId, count = 3) {
+            const container = document.getElementById(containerId);
+            let skeletons = '';
+            for (let i = 0; i < count; i++) {
+                skeletons += `
+                    <div class="skeleton skeleton-card">
+                        <div class="skeleton skeleton-text"></div>
+                        <div class="skeleton skeleton-text short"></div>
+                    </div>
+                `;
+            }
+            container.innerHTML = skeletons;
+        }
+
+        // ==================== PROGRESS RING ====================
+        function createProgressRing(percent, size = 60) {
+            const radius = (size - 12) / 2;
+            const circumference = 2 * Math.PI * radius;
+            const offset = circumference - (percent / 100) * circumference;
+
+            return `
+                <div class="progress-ring" style="width: ${size}px; height: ${size}px;">
+                    <svg width="${size}" height="${size}">
+                        <circle class="progress-ring-circle" cx="${size/2}" cy="${size/2}" r="${radius}"/>
+                        <circle class="progress-ring-progress" cx="${size/2}" cy="${size/2}" r="${radius}"
+                            stroke-dasharray="${circumference}"
+                            stroke-dashoffset="${offset}"/>
+                    </svg>
+                    <span class="progress-ring-text">${Math.round(percent)}%</span>
+                </div>
+            `;
+        }
+
+        // ==================== ENHANCED EMPTY STATES ====================
+        function renderEmptyState(icon, title, message, actionText = null, actionFn = null) {
+            let html = `
+                <div class="empty-state-enhanced">
+                    <div class="empty-icon">${icon}</div>
+                    <h3>${title}</h3>
+                    <p>${message}</p>
+            `;
+            if (actionText && actionFn) {
+                html += `<button class="btn btn-primary" onclick="${actionFn}">${actionText}</button>`;
+            }
+            html += '</div>';
+            return html;
+        }
+
+        // Close modals & dropdowns
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
+                document.querySelectorAll('.filter-menu').forEach(m => m.classList.remove('active'));
+                document.querySelectorAll('.emoji-picker').forEach(m => m.classList.remove('active'));
+                closeConfirmDialog(false);
+            }
         });
 
-        function handleCellClick(event) {
-            const clickedCell = event.target;
-            const clickedCellIndex = parseInt(clickedCell.getAttribute('data-index'));
-
-            if (gameBoard[clickedCellIndex] !== '' || !gameActive) {
-                return;
+        document.addEventListener('click', e => {
+            if (!e.target.closest('.filter-dropdown')) {
+                document.getElementById('filter-menu').classList.remove('active');
             }
-
-            updateCell(clickedCell, clickedCellIndex);
-            checkResult();
-        }
-
-        function updateCell(cell, index) {
-            gameBoard[index] = currentPlayer;
-            cell.textContent = currentPlayer;
-            cell.classList.add('taken', currentPlayer.toLowerCase());
-        }
-
-        function checkResult() {
-            let roundWon = false;
-            let winningCombination = null;
-
-            for (let i = 0; i < winningConditions.length; i++) {
-                const [a, b, c] = winningConditions[i];
-                if (gameBoard[a] === '' || gameBoard[b] === '' || gameBoard[c] === '') {
-                    continue;
-                }
-                if (gameBoard[a] === gameBoard[b] && gameBoard[b] === gameBoard[c]) {
-                    roundWon = true;
-                    winningCombination = [a, b, c];
-                    break;
-                }
+            if (!e.target.closest('.emoji-btn') && !e.target.closest('.emoji-picker')) {
+                document.getElementById('emoji-picker').classList.remove('active');
             }
+        });
 
-            if (roundWon) {
-                gameInfo.innerHTML = `<span class="current-player">Player ${currentPlayer} Wins!</span>`;
-                gameActive = false;
-                highlightWinningCells(winningCombination);
-                updateScore(currentPlayer);
-                return;
-            }
-
-            const roundDraw = !gameBoard.includes('');
-            if (roundDraw) {
-                gameInfo.innerHTML = `<span class="current-player">Game Draw!</span>`;
-                gameActive = false;
-                updateScore('draw');
-                return;
-            }
-
-            currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
-            gameInfo.innerHTML = `<span class="current-player">Player ${currentPlayer}'s Turn</span>`;
-        }
-
-        function highlightWinningCells(combination) {
-            combination.forEach(index => {
-                cells[index].classList.add('winning');
-            });
-        }
-
-        function updateScore(winner) {
-            if (winner === 'X') {
-                scores.x++;
-                document.getElementById('x-score').textContent = scores.x;
-            } else if (winner === 'O') {
-                scores.o++;
-                document.getElementById('o-score').textContent = scores.o;
-            } else {
-                scores.draws++;
-                document.getElementById('draw-score').textContent = scores.draws;
-            }
-        }
-
-        function resetGame() {
-            currentPlayer = 'X';
-            gameBoard = ['', '', '', '', '', '', '', '', ''];
-            gameActive = true;
-            gameInfo.innerHTML = `<span class="current-player">Player X's Turn</span>`;
-
-            cells.forEach(cell => {
-                cell.textContent = '';
-                cell.classList.remove('taken', 'x', 'o', 'winning');
-            });
-        }
+        // Initialize
+        checkAuth();
     </script>
 </body>
 </html>
